@@ -1,0 +1,24 @@
+[workspace]
+members = [
+    "server",
+
+    "wsdl_rs/devicemgmt",
+
+    "xsd_rs/onvif",
+
+    # Following are the 5 dependencies for onvif.xsd
+    "xsd_rs/common",
+    "xsd_rs/xmlmime",
+    "xsd_rs/soapenv",
+    "xsd_rs/b2",
+    "xsd_rs/t1",
+    "xsd_rs/ws_addr",
+    "xsd_rs/xop",
+
+    "validate"
+]
+
+[profile.release]
+strip = true  # Automatically strip symbols from the binary.
+opt-level = "z"  # Optimize for size.
+lto = true

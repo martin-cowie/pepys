@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery" xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:w="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+  <s:Header>
+    <w:MessageID>uuid:67409a43-b93f-43f8-9f49-98d6582d2fd7</w:MessageID>
+    <w:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To>
+    <w:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action>
+  </s:Header>
+  <s:Body>
+    <d:Probe>
+      <d:Types/>
+    </d:Probe>
+  </s:Body>
+</s:Envelope>

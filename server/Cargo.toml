@@ -1,0 +1,23 @@
+[package]
+name = "pepys"
+authors = ["Martin Cowie"]
+description = "An ONVIF server for the Raspberry Pi Camera"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.22"
+get_if_addrs = "0.5.3"
+lazy_static = "1.4.0"
+
+tokio = { version = "1.21.1", default-features = false, features = ["rt", "macros", "rt-multi-thread"] }
+tracing = "0.1.36"
+tracing-subscriber = "0.3.15"
+uuid = { version = "1.1.2", features = ["v4"] }
+yaserde = "0.7.1"
+yaserde_derive = "0.7.1"
+hyper = { version = "0.14.20", features = ["server", "stream", "http1", "tcp"] }
+
+devicemgmt = {path = "../wsdl_rs/devicemgmt"}
+onvif = { package = "onvif", path = "../xsd_rs/onvif" }
+libc-strftime = "0.2.0"
