@@ -3,28 +3,49 @@
 use chrono::prelude::*;
 use devicemgmt::request;
 use devicemgmt::response;
-use std::error::Error; //TODO: understand this
+use std::error::Error;
+
+use crate::rpi; //TODO: understand this
 
 pub async fn process_request(payload: String) -> Result<String, Box<dyn Error>> {
 
     let request: request::Envelope = yaserde::de::from_str(&payload).unwrap();//TODO: map errors
     //TODO: map parse failures to 501s
 
-    match request.body {
+    let response = match request.body {
         request::Body::GetCapabilities(_) => todo!(),
-        request::Body::GetDeviceInformation(_) => todo!(),
+        request::Body::GetDeviceInformation(_) => get_device_information(),
         request::Body::GetNetworkInterfaces(_) => todo!(),
         request::Body::GetNTP(_) => todo!(),
         request::Body::GetRelayOutputs(_) => todo!(),
         request::Body::GetServices(_) => todo!(),
-        request::Body::GetSystemDateAndTime(_) => Ok(get_system_date_and_time()),
+        request::Body::GetSystemDateAndTime(_) => get_system_date_and_time(),
         request::Body::SetRelayOutputSettings(_) => todo!(),
 
         _ => {
             // Feed back: the request is valid, but unimplemented
             todo!()
         }
+    };
+
+    Ok(yaserde::ser::to_string(&response).unwrap()) //TODO: relay errors as 500
+
+}
+
+fn get_device_information() -> response::Envelope {
+
+    let hardware_info = rpi::RpiProcInfo::new().unwrap_or_default();
+
+    response::Envelope{
+        body: response::Body::GetDeviceInformationResponse(devicemgmt::GetDeviceInformationResponse {
+            manufacturer: hardware_info.manufacturer,
+            model: hardware_info.model,
+            firmware_version: hardware_info.revision,
+            serial_number: hardware_info.serial,
+            hardware_id: hardware_info.hardware
+        })
     }
+
 }
 
 fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
@@ -40,7 +61,7 @@ fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
     }
 }
 
-fn get_system_date_and_time() -> String {
+fn get_system_date_and_time() -> response::Envelope {
     let utc: DateTime<Utc> = Utc::now();
     let local_time = Local::now();
 
@@ -52,7 +73,7 @@ fn get_system_date_and_time() -> String {
         tm.tm_isdst > 0
     };
 
-    let result: response::Envelope = response::Envelope {
+    response::Envelope {
         body: response::Body::GetSystemDateAndTimeResponse( devicemgmt::GetSystemDateAndTimeResponse{
             system_date_and_time: onvif::SystemDateTime {
                 date_time_type: onvif::SetDateTimeType::Ntp,
@@ -65,9 +86,7 @@ fn get_system_date_and_time() -> String {
                 extension: None
             },
         })
-    };
-
-    yaserde::ser::to_string(&result).unwrap() //TODO: relay errors as 500
+    }
 }
 
 #[cfg(test)]

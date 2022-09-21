@@ -21,3 +21,6 @@ hyper = { version = "0.14.20", features = ["server", "stream", "http1", "tcp"] }
 devicemgmt = {path = "../wsdl_rs/devicemgmt"}
 onvif = { package = "onvif", path = "../xsd_rs/onvif" }
 libc-strftime = "0.2.0"
+
+[dev-dependencies]
+tempfile = "3.3.0"

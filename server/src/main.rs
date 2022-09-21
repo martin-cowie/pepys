@@ -1,5 +1,6 @@
 mod ws_discovery_responder;
 mod web_services;
+mod rpi;
 
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr, Ifv6Addr};
 use std::error::Error;
