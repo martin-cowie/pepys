@@ -3,6 +3,7 @@
 use chrono::prelude::*;
 use devicemgmt::request;
 use devicemgmt::response;
+use onvif::Ntpinformation;
 use std::error::Error;
 
 use crate::rpi; //TODO: understand this
@@ -16,7 +17,7 @@ pub async fn process_request(payload: String) -> Result<String, Box<dyn Error>> 
         request::Body::GetCapabilities(_) => todo!(),
         request::Body::GetDeviceInformation(_) => get_device_information(),
         request::Body::GetNetworkInterfaces(_) => todo!(),
-        request::Body::GetNTP(_) => todo!(),
+        request::Body::GetNTP(_) => get_ntp(),
         request::Body::GetRelayOutputs(_) => todo!(),
         request::Body::GetServices(_) => todo!(),
         request::Body::GetSystemDateAndTime(_) => get_system_date_and_time(),
@@ -30,6 +31,17 @@ pub async fn process_request(payload: String) -> Result<String, Box<dyn Error>> 
 
     Ok(yaserde::ser::to_string(&response).unwrap()) //TODO: relay errors as 500
 
+}
+
+fn get_ntp() -> devicemgmt::response::Envelope {
+    response::Envelope{
+        body: response::Body::GetNTPResponse(devicemgmt::GetNTPResponse{ ntp_information: Ntpinformation{
+            from_dhcp: true, //TODO: get from configuration
+            ntp_from_dhcp: vec![],
+            ntp_manual: vec![],
+            extension: None
+        } })
+    }
 }
 
 fn get_device_information() -> response::Envelope {
