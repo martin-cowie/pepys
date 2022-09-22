@@ -1,41 +1,45 @@
-// use chrono::{Timelike, Datelike};
-// use onvif::{Time, Date, DateTime, TimeZone, SystemDateTime};
 use chrono::prelude::*;
 use devicemgmt::request;
 use devicemgmt::response;
 use onvif::Ntpinformation;
-use std::error::Error;
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use network_interface::NetworkInterface;
 use network_interface::NetworkInterfaceConfig;
+use hyper::StatusCode;
 
-use crate::rpi; //TODO: understand this
+use crate::rpi;
+use super::ServiceErrorDetail;
 
-pub async fn process_request(payload: String) -> Result<String, Box<dyn Error>> {
+pub async fn process_request(payload: String) -> Result<String, ServiceErrorDetail> {
 
-    let request: request::Envelope = yaserde::de::from_str(&payload).unwrap();//TODO: map errors
-    //TODO: map parse failures to 501s
+    let request: request::Envelope = yaserde::de::from_str(&payload)
+        .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
 
     let response = match request.body {
-        request::Body::GetCapabilities(_) => todo!(),
         request::Body::GetDeviceInformation(_) => get_device_information(),
         request::Body::GetNetworkInterfaces(_) => get_network_interfaces(),
         request::Body::GetNTP(_) => get_ntp(),
-        request::Body::GetRelayOutputs(_) => todo!(),
-        request::Body::GetServices(_) => todo!(),
         request::Body::GetSystemDateAndTime(_) => get_system_date_and_time(),
-        request::Body::SetRelayOutputSettings(_) => todo!(),
+        // request::Body::GetCapabilities(_) => todo!(),
+        // request::Body::GetRelayOutputs(_) => todo!(),
+        // request::Body::GetServices(_) => todo!(),
+        // request::Body::SetRelayOutputSettings(_) => todo!(),
 
         _ => {
-            // Feed back: the request is valid, but unimplemented
-            todo!()
+            return Err(ServiceErrorDetail::new(
+                StatusCode::NOT_IMPLEMENTED,
+                Some("Service not implemented.".to_string())
+            ));
         }
     };
 
-    Ok(yaserde::ser::to_string(&response).unwrap()) //TODO: relay errors as 500
-
+    let result = yaserde::ser::to_string(&response)
+        .map_err(|ser_err| ServiceErrorDetail::new(StatusCode::INTERNAL_SERVER_ERROR, Some(ser_err)))?;
+    Ok(result)
 }
+
+//===| Request Handlers |=======
 
 fn get_network_interfaces() -> devicemgmt::response::Envelope {
     let network_interfaces = NetworkInterface::show().unwrap(); //TODO: better error handling
@@ -91,23 +95,6 @@ fn get_network_interfaces() -> devicemgmt::response::Envelope {
     }
 }
 
-//TODO: these two function are identical
-
-fn v6_netmask_width(netmask: network_interface::Netmask<Ipv6Addr>) -> i32 {
-    if let Some(netmask) = netmask {
-        netmask.octets().iter().map(|x| *x as i32).sum()
-    } else {
-        0
-    }
-}
-
-fn v4_netmask_width(netmask: network_interface::Netmask<Ipv4Addr>) -> i32 {
-    if let Some(netmask) = netmask {
-        netmask.octets().iter().map(|x| *x as i32).sum()
-    } else {
-        0
-    }
-}
 
 fn get_ntp() -> devicemgmt::response::Envelope {
     response::Envelope{
@@ -134,19 +121,6 @@ fn get_device_information() -> response::Envelope {
         })
     }
 
-}
-
-fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
-    onvif::DateTime{
-        time: onvif::Time{
-            hour: time.hour() as i32,
-            minute: time.minute() as i32,
-            second: time.second() as i32 },
-        date: onvif::Date{
-            year: time.year() as i32,
-            month: time.month() as i32,
-            day: time.day() as i32 }
-    }
 }
 
 fn get_system_date_and_time() -> response::Envelope {
@@ -176,6 +150,40 @@ fn get_system_date_and_time() -> response::Envelope {
         })
     }
 }
+
+//===| Support functions |=======
+
+fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
+    onvif::DateTime{
+        time: onvif::Time{
+            hour: time.hour() as i32,
+            minute: time.minute() as i32,
+            second: time.second() as i32 },
+        date: onvif::Date{
+            year: time.year() as i32,
+            month: time.month() as i32,
+            day: time.day() as i32 }
+    }
+}
+
+//TODO: these two function are identical
+
+fn v6_netmask_width(netmask: network_interface::Netmask<Ipv6Addr>) -> i32 {
+    if let Some(netmask) = netmask {
+        netmask.octets().iter().map(|x| *x as i32).sum()
+    } else {
+        0
+    }
+}
+
+fn v4_netmask_width(netmask: network_interface::Netmask<Ipv4Addr>) -> i32 {
+    if let Some(netmask) = netmask {
+        netmask.octets().iter().map(|x| *x as i32).sum()
+    } else {
+        0
+    }
+}
+
 
 #[cfg(test)]
 mod test {
