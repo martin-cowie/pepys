@@ -5,6 +5,10 @@ use devicemgmt::request;
 use devicemgmt::response;
 use onvif::Ntpinformation;
 use std::error::Error;
+use std::net::Ipv4Addr;
+use std::net::Ipv6Addr;
+use network_interface::NetworkInterface;
+use network_interface::NetworkInterfaceConfig;
 
 use crate::rpi; //TODO: understand this
 
@@ -16,7 +20,7 @@ pub async fn process_request(payload: String) -> Result<String, Box<dyn Error>> 
     let response = match request.body {
         request::Body::GetCapabilities(_) => todo!(),
         request::Body::GetDeviceInformation(_) => get_device_information(),
-        request::Body::GetNetworkInterfaces(_) => todo!(),
+        request::Body::GetNetworkInterfaces(_) => get_network_interfaces(),
         request::Body::GetNTP(_) => get_ntp(),
         request::Body::GetRelayOutputs(_) => todo!(),
         request::Body::GetServices(_) => todo!(),
@@ -31,6 +35,78 @@ pub async fn process_request(payload: String) -> Result<String, Box<dyn Error>> 
 
     Ok(yaserde::ser::to_string(&response).unwrap()) //TODO: relay errors as 500
 
+}
+
+fn get_network_interfaces() -> devicemgmt::response::Envelope {
+    let network_interfaces = NetworkInterface::show().unwrap(); //TODO: better error handling
+
+    let nic_structs: Vec<onvif::NetworkInterface> = network_interfaces.iter()
+        .map(|nic| {
+        onvif::NetworkInterface{
+            enabled: true, //TODO: this is a guess
+            info: Some(onvif::NetworkInterfaceInfo{
+                name: Some(nic.name.clone()),
+                hw_address: onvif::HwAddress(nic.mac_addr.clone().unwrap_or_default()),
+                mtu: None,
+            }),
+            link: None,
+            i_pv_4: if let Some(network_interface::Addr::V4(v4_addr)) = nic.addr {vec![
+                onvif::Ipv4NetworkInterface {
+                    enabled: true, //TODO: this is a guess
+                    config: onvif::Ipv4Configuration {
+                        manual: vec![],
+                        link_local: None,
+                        from_dhcp: Some(onvif::PrefixedIPv4Address {
+                            address: onvif::Ipv4Address(v4_addr.ip.to_string()),
+                            prefix_length: v4_netmask_width(v4_addr.netmask)
+                        }),
+                        dhcp: true
+                    }
+                }
+            ]} else {vec![]},
+            i_pv_6: if let Some(network_interface::Addr::V6(v6_addr)) = nic.addr {vec![
+                onvif::Ipv6NetworkInterface {
+                    enabled:true, //TODO: this is a guess
+                    config: Some(onvif::Ipv6Configuration{
+                        accept_router_advert: None,
+                        dhcp: onvif::Ipv6DHCPConfiguration::Auto,
+                        manual: vec![],
+                        link_local: vec![],
+                        from_dhcp: vec![onvif::PrefixedIPv6Address{
+                            address: onvif::Ipv6Address(v6_addr.ip.to_string()),
+                            prefix_length: v6_netmask_width(v6_addr.netmask)
+                        }],
+                        from_ra: vec![],
+                        extension: None }) }
+            ]} else {vec![]},
+            extension: None,
+            token: onvif::ReferenceToken(nic.name.clone()),
+        }
+    }).collect();
+
+    response::Envelope{
+        body: response::Body::GetNetworkInterfacesResponse(devicemgmt::GetNetworkInterfacesResponse {
+            network_interfaces: nic_structs
+        })
+    }
+}
+
+//TODO: these two function are identical
+
+fn v6_netmask_width(netmask: network_interface::Netmask<Ipv6Addr>) -> i32 {
+    if let Some(netmask) = netmask {
+        netmask.octets().iter().map(|x| *x as i32).sum()
+    } else {
+        0
+    }
+}
+
+fn v4_netmask_width(netmask: network_interface::Netmask<Ipv4Addr>) -> i32 {
+    if let Some(netmask) = netmask {
+        netmask.octets().iter().map(|x| *x as i32).sum()
+    } else {
+        0
+    }
 }
 
 fn get_ntp() -> devicemgmt::response::Envelope {
@@ -104,5 +180,19 @@ fn get_system_date_and_time() -> response::Envelope {
 #[cfg(test)]
 mod test {
 
+    use network_interface::NetworkInterface;
+    use network_interface::NetworkInterfaceConfig;
+
+    #[test]
+    fn test_crate() {
+        let network_interfaces = NetworkInterface::show().unwrap();
+
+        for itf in network_interfaces.iter() {
+
+
+            println!("{:#?}", itf);
+
+        }
+    }
 
 }
