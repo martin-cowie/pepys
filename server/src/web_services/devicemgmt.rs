@@ -8,19 +8,20 @@ use network_interface::NetworkInterface;
 use network_interface::NetworkInterfaceConfig;
 use hyper::StatusCode;
 
+
 use crate::rpi;
 use super::ServiceErrorDetail;
 
-pub async fn process_request(payload: String) -> Result<String, ServiceErrorDetail> {
+pub async fn process_request(payload: impl std::io::Read) -> Result<String, ServiceErrorDetail> {
 
-    let request: request::Envelope = yaserde::de::from_str(&payload)
+    let request: request::Envelope = yaserde::de::from_reader(payload)
         .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
 
     let response = match request.body {
-        request::Body::GetDeviceInformation(_) => get_device_information(),
-        request::Body::GetNetworkInterfaces(_) => get_network_interfaces(),
-        request::Body::GetNTP(_) => get_ntp(),
-        request::Body::GetSystemDateAndTime(_) => get_system_date_and_time(),
+        request::Body::GetDeviceInformation(_) => get_device_information()?,
+        request::Body::GetNetworkInterfaces(_) => get_network_interfaces()?,
+        request::Body::GetNTP(_) => get_ntp()?,
+        request::Body::GetSystemDateAndTime(_) => get_system_date_and_time()?,
         // request::Body::GetCapabilities(_) => todo!(),
         // request::Body::GetRelayOutputs(_) => todo!(),
         // request::Body::GetServices(_) => todo!(),
@@ -41,8 +42,9 @@ pub async fn process_request(payload: String) -> Result<String, ServiceErrorDeta
 
 //===| Request Handlers |=======
 
-fn get_network_interfaces() -> devicemgmt::response::Envelope {
-    let network_interfaces = NetworkInterface::show().unwrap(); //TODO: better error handling
+fn get_network_interfaces() -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    let network_interfaces = NetworkInterface::show()
+        .map_err(|e| ServiceErrorDetail::new(StatusCode::INTERNAL_SERVER_ERROR, Some(e.to_string())))?;
 
     let nic_structs: Vec<onvif::NetworkInterface> = network_interfaces.iter()
         .map(|nic| {
@@ -88,30 +90,30 @@ fn get_network_interfaces() -> devicemgmt::response::Envelope {
         }
     }).collect();
 
-    response::Envelope{
+    Ok(response::Envelope{
         body: response::Body::GetNetworkInterfacesResponse(devicemgmt::GetNetworkInterfacesResponse {
             network_interfaces: nic_structs
         })
-    }
+    })
 }
 
 
-fn get_ntp() -> devicemgmt::response::Envelope {
-    response::Envelope{
+fn get_ntp() -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    Ok(response::Envelope{
         body: response::Body::GetNTPResponse(devicemgmt::GetNTPResponse{ ntp_information: Ntpinformation{
             from_dhcp: true, //TODO: get from configuration
             ntp_from_dhcp: vec![],
             ntp_manual: vec![],
             extension: None
         } })
-    }
+    })
 }
 
-fn get_device_information() -> response::Envelope {
+fn get_device_information() -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
 
     let hardware_info = rpi::RpiProcInfo::new().unwrap_or_default();
 
-    response::Envelope{
+    Ok(response::Envelope{
         body: response::Body::GetDeviceInformationResponse(devicemgmt::GetDeviceInformationResponse {
             manufacturer: hardware_info.manufacturer,
             model: hardware_info.model,
@@ -119,11 +121,11 @@ fn get_device_information() -> response::Envelope {
             serial_number: hardware_info.serial,
             hardware_id: hardware_info.hardware
         })
-    }
+    })
 
 }
 
-fn get_system_date_and_time() -> response::Envelope {
+fn get_system_date_and_time() -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
     let utc: DateTime<Utc> = Utc::now();
     let local_time = Local::now();
 
@@ -135,7 +137,7 @@ fn get_system_date_and_time() -> response::Envelope {
         tm.tm_isdst > 0
     };
 
-    response::Envelope {
+    Ok(response::Envelope {
         body: response::Body::GetSystemDateAndTimeResponse( devicemgmt::GetSystemDateAndTimeResponse{
             system_date_and_time: onvif::SystemDateTime {
                 date_time_type: onvif::SetDateTimeType::Ntp,
@@ -148,7 +150,7 @@ fn get_system_date_and_time() -> response::Envelope {
                 extension: None
             },
         })
-    }
+    })
 }
 
 //===| Support functions |=======

@@ -1,5 +1,5 @@
 pub(crate) mod devicemgmt;
-use hyper::{Method, StatusCode};
+use hyper::{Method, StatusCode, body::Buf};
 
 #[derive(Debug)]
 pub struct ServiceErrorDetail {
@@ -19,20 +19,18 @@ impl ServiceErrorDetail {
         let mut response = hyper::Response::new(hyper::Body::from(self.detail.clone().unwrap_or_default()));
         *response.status_mut() = self.status;
         response
-}
+    }
 }
 
 pub async fn handle_http_request (req: hyper::Request<hyper::Body>, origin: std::net::SocketAddr) -> Result<hyper::Response<hyper::Body>, hyper::Error> {
     match (req.method(), req.uri().path()) {
 
         (&Method::POST, "/picam/device-management") => {
-            tracing::info!("Responding to request for URI {} from {}", req.uri().path(), origin);
-
+            let uri_path = req.uri().path().to_string();
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-            let payload = std::str::from_utf8(&whole_body).unwrap(); //Map this error
-            let payload = String::from(payload);
+            tracing::info!("Responding to {} bytes of request for URI {} from {}", whole_body.len(), uri_path, origin);
 
-            let result = self::devicemgmt::process_request(payload).await;
+            let result = self::devicemgmt::process_request(whole_body.reader()).await;
             match result {
                 Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
                 Err(detail) => {

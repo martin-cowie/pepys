@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     // Start the UDP listener
     let ssdp_responder  = tokio::spawn(async move {
-        bind_ws_discovery_responder(&xaddrs).await.unwrap();
+        bind_ws_discovery_responder(&xaddrs).await.expect("Cannot start WS-Discovery listener");
     });
 
     let (_, _) = (web_server.await?, ssdp_responder.await?);
