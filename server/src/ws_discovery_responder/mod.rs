@@ -1,11 +1,11 @@
 mod probe;
 mod probe_response;
 
-use tokio::net::UdpSocket;
+use static_init::dynamic;
 use std::{error::Error, net::{SocketAddr, Ipv4Addr, IpAddr}};
-use uuid::Uuid;
-use lazy_static::lazy_static;
+use tokio::net::UdpSocket;
 use tracing::{info, debug};
+use uuid::Uuid;
 
 use crate::ws_discovery_responder::probe::Envelope;
 
@@ -24,14 +24,13 @@ const WS_DISCOVERY_PROBE: &str = "http://schemas.xmlsoap.org/ws/2005/04/discover
 const WS_DISCOVERY_MATCHES: &str = "http://schemas.xmlsoap.org/ws/2005/04/discovery/ProbeMatches";
 const ADDRESSING_ROLE_ANON: &str = "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous";
 
-lazy_static! {
-    static ref SCOPES: Vec<&'static str> = vec![
-        "onvif://www.onvif.org/type/video_encoder",
-        "onvif://www.onvif.org/hardware/Pi%20Cam",
-        "onvif://www.onvif.org/name/Pepys", //TODO: in lieu of a better name
-        "onvif://www.onvif.org/location/"
-    ];
-}
+#[dynamic]
+static SCOPES: Vec<&'static str> = vec![
+    "onvif://www.onvif.org/type/video_encoder",
+    "onvif://www.onvif.org/hardware/Pi%20Cam",
+    "onvif://www.onvif.org/name/Pepys",
+    "onvif://www.onvif.org/location/"
+];
 
 pub async fn bind_ws_discovery_responder(xaddr: &str) -> Result<(), Box<dyn Error>> {
     let listening_socket = {

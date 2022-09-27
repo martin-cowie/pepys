@@ -4,42 +4,60 @@ mod rpi;
 
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr, Ifv6Addr};
 use std::error::Error;
+use std::sync::Arc;
 use tracing::info;
 use ws_discovery_responder::bind_ws_discovery_responder;
 
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::Server;
+use hyper::Uri;
 
 use std::convert::Infallible;
 
-//TODO: should this be constant, or ephemeral?
+//TODO: Take this from configuration
 const WEB_PORT: u16 = 8088;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
     tracing_subscriber::fmt::init();
 
-    let xaddrs = get_urls(WEB_PORT, "picam/device-management")?.join(" ");
+    let xaddrs = get_urls(WEB_PORT, "picam/device-management")?;
+
+    // The inner layer of request handling machinery
+    let web_services = {
+        let service_root: Uri = xaddrs[0].parse().expect("Cannot parse root URI");
+        Arc::new(web_services::WebServices::new(&service_root))
+    };
 
     // Create and start the 'Hyper' web server
     let web_server = {
-        let make_service = make_service_fn(move |conn: &AddrStream|{
+
+        // Build the outer layer of request handling machinery
+        let service_maker = make_service_fn(move |conn: &AddrStream|{
             let addr = conn.remote_addr();
+            let web_services = Arc::clone(&web_services);
             tracing::debug!("Making service for {}", &addr);
+
             async move {
-                tracing::debug!("Service closure running for {}", &addr);
-                Ok::<_, Infallible>(service_fn(move |req| web_services::handle_http_request(req, addr)))
+                Ok::<_, Infallible>(service_fn(move |req| {
+                    tracing::debug!("Service closure running for {}", &addr);
+                    let web_services = Arc::clone(&web_services);
+
+                    async move {
+                        web_services.handle_http_request(req, addr).await
+                    }
+                }))
             }
         });
         let addr = ([0, 0, 0, 0], WEB_PORT).into();
-        Server::bind(&addr).serve(make_service)
+        Server::bind(&addr).serve(service_maker)
     };
     info!("Started HTTP server bound at {:?}", xaddrs);
 
     // Start the UDP listener
     let ssdp_responder  = tokio::spawn(async move {
-        bind_ws_discovery_responder(&xaddrs).await.expect("Cannot start WS-Discovery listener");
+        bind_ws_discovery_responder(&xaddrs.join(", ")).await.expect("Cannot start WS-Discovery listener");
     });
 
     let (_, _) = (web_server.await?, ssdp_responder.await?);
