@@ -10,9 +10,10 @@ pub struct ServiceErrorDetail {
     detail: Option<String>
 }
 
-///
-/// Common means of communicating errors from service implementations.
-///
+const DEVICE_MANAGEMENT_PATH: &str = "/picam/device-management";
+
+//===| Common means of communicating errors from service implementations |============
+
 impl ServiceErrorDetail  {
     pub fn new(status: StatusCode, detail: Option<String>) -> Self {
         Self {
@@ -40,8 +41,10 @@ impl std::fmt::Display for ServiceErrorDetail {
 
 impl Error for ServiceErrorDetail{}
 
+//===| Web Services Controller |====================================
+
 pub struct WebServices {
-    device_management_service: DeviceManagmentService,
+    device_management_service: DeviceManagmentService
 }
 
 impl WebServices {
@@ -49,8 +52,7 @@ impl WebServices {
     pub fn new(service_root: &Uri) -> Self {
 
         Self {
-            // services
-            device_management_service: DeviceManagmentService::new(service_root)
+            device_management_service: DeviceManagmentService::new(service_root, DEVICE_MANAGEMENT_PATH),
         }
     }
 
@@ -58,7 +60,7 @@ impl WebServices {
 
         match (req.method(), req.uri().path()) {
 
-            (&Method::POST, "/picam/device-management") => {
+            (&Method::POST, DEVICE_MANAGEMENT_PATH) => {
                 let uri_path = req.uri().path().to_string();
                 let whole_body = hyper::body::to_bytes(req.into_body()).await?;
                 tracing::info!("Responding to {} bytes of request for URI {} from {}", whole_body.len(), uri_path, origin);

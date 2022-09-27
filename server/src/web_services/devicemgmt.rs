@@ -19,24 +19,21 @@ pub struct DeviceManagmentService {
 
 impl DeviceManagmentService {
 
-    pub fn new(service_root: &Uri) -> Self {
+    pub fn new(service_root: &Uri, path: &str) -> Self {
 
         let parts = service_root.clone().into_parts();
 
+        // TODO: better means of constructing one URI from another
         let service_address = Uri::builder()
             .scheme(parts.scheme.expect("Cannot handle missing scheme"))
             .authority(parts.authority.expect("Cannot handle missing authority"))
-            .path_and_query("/picam/device-management")
+            .path_and_query(path)
             .build()
-            .expect("Cannot interpret service root");
+            .expect("Cannot deconstruct service root");
 
         Self {
             service_address
         }
-    }
-
-    pub fn get_path(&self) -> &str {
-        self.service_address.path()
     }
 
     pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, ServiceErrorDetail> {
@@ -72,10 +69,39 @@ impl DeviceManagmentService {
     fn get_capabilities(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
         let device = onvif::DeviceCapabilities{
             x_addr: self.service_address.to_string(),
-            network: None,
-            system: None,
-            io: None,
-            security: None,
+            network: Some(onvif::NetworkCapabilities {
+                ip_filter: Some(false),
+                zero_configuration: Some(false),  //TODO: get from config
+                ip_version_6: Some(true), //FIXME - only true if have ipv6 NICs
+                dyn_dns: Some(false),
+                extension: None }),
+            system: Some(onvif::SystemCapabilities{
+                discovery_resolve: false,
+                discovery_bye: false,
+                remote_discovery: false,
+                system_backup: false,
+                system_logging: false,
+                firmware_upgrade: false,
+                supported_versions: vec![onvif::OnvifVersion{
+                    major: 2,
+                    minor: 5 }], //TODO: Get from config
+                extension: None }),
+            io: Some(onvif::Iocapabilities{
+                input_connectors: Some(0),
+                relay_outputs: Some(1),
+                extension: None }),
+            security: Some(onvif::SecurityCapabilities{
+                tls1_1: false,
+                tls1_2: false,
+                onboard_key_generation: false,
+                access_policy_config: false,
+                x_509_token: false,
+                saml_token: false,
+                kerberos_token: false,
+                rel_token: false,
+                extension: None,
+            }),
+
             extension: None
         };
 
