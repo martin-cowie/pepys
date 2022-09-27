@@ -27,3 +27,8 @@ curl -s -X POST -d @./data/GetNetworkInterfaces.xml http://localhost:8088/pepys/
 ```
 curl -s -X POST -d @./data/GetCapabilities.xml http://localhost:8088/pepys/device-management | xmllint --format -
 ```
+
+* GetRelayOutputs
+```
+curl -s -X POST -d @./data/GetRelayOutputs.xml http://localhost:8088/pepys/device-management | xmllint --format -
+```

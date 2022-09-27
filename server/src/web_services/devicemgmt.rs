@@ -45,9 +45,9 @@ impl DeviceManagmentService {
             request::Body::GetNTP(_) => self.get_ntp()?,
             request::Body::GetSystemDateAndTime(_) => self.get_system_date_and_time()?,
             request::Body::GetCapabilities(_) => self.get_capabilities()?,
+            request::Body::GetRelayOutputs(_) => self.get_relay_outputs()?,
+            // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?,
             // request::Body::GetServices(_) => todo!(),
-            // request::Body::GetRelayOutputs(_) => todo!(),
-            // request::Body::SetRelayOutputSettings(_) => todo!(),
 
             _ => {
                 return Err(ServiceErrorDetail::new(
@@ -251,6 +251,22 @@ impl DeviceManagmentService {
             })
         })
 }
+
+    fn get_relay_outputs(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+
+        Ok(response::Envelope {
+            body: response::Body::GetRelayOutputsResponse( devicemgmt::GetRelayOutputsResponse {
+                relay_outputs: vec![onvif::RelayOutput{
+                    properties: onvif::RelayOutputSettings {
+                        mode: onvif::RelayMode::Bistable,
+                        delay_time: "5s".to_string(), //FIXME: a guess
+                        idle_state: onvif::RelayIdleState::Open
+                    },
+                    token:  onvif::ReferenceToken("relay1".to_string())
+                }]
+            })
+        })
+    }
 }
 
 
