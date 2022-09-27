@@ -14,25 +14,23 @@ use crate::rpi;
 use super::ServiceErrorDetail;
 
 pub struct DeviceManagmentService {
-    service_address: Uri
+    service_address: Uri,
+
+    imaging_address: Uri,
+    event_address: Uri,
+    media_address: Uri
 }
 
 impl DeviceManagmentService {
 
-    pub fn new(service_root: &Uri, path: &str) -> Self {
-
-        let parts = service_root.clone().into_parts();
-
-        // TODO: better means of constructing one URI from another
-        let service_address = Uri::builder()
-            .scheme(parts.scheme.expect("Cannot handle missing scheme"))
-            .authority(parts.authority.expect("Cannot handle missing authority"))
-            .path_and_query(path)
-            .build()
-            .expect("Cannot deconstruct service root");
+    pub fn new(service_root: &Uri, path: &str, event_path: &str, imaging_path: &str, media_path: &str) -> Self {
 
         Self {
-            service_address
+            service_address: build_address(service_root, path),
+
+            event_address: build_address(service_root, event_path),
+            imaging_address: build_address(service_root, imaging_path),
+            media_address: build_address(service_root, media_path),
         }
     }
 
@@ -105,14 +103,38 @@ impl DeviceManagmentService {
             extension: None
         };
 
+        //TODO: get these details from the horses mouth
+        let events = onvif::EventCapabilities {
+            x_addr: self.event_address.to_string(),
+            ws_subscription_policy_support: false,
+            ws_pull_point_support: false,
+            ws_pausable_subscription_manager_interface_support: false,
+        };
+
+        let imaging = onvif::ImagingCapabilities {
+            x_addr: self.imaging_address.to_string()
+        };
+
+        //TODO: get these details from the horses mouth
+        let media = onvif::MediaCapabilities {
+            x_addr: self.media_address.to_string(),
+            streaming_capabilities: onvif::RealTimeStreamingCapabilities {
+                rtp_multicast: Some(false),
+                rtp_tcp: Some(true),
+                rtp_rtsp_tcp: Some(true),
+                extension: None,
+            },
+            extension: None,
+        };
+
         Ok(response::Envelope{
             body: response::Body::GetCapabilitiesResponse(devicemgmt::GetCapabilitiesResponse {
                 capabilities: onvif::Capabilities {
                     analytics: vec![],
                     device: vec![device],
-                    events: vec![],
-                    imaging: vec![],
-                    media: vec![],
+                    events: vec![events],
+                    imaging: vec![imaging],
+                    media: vec![media],
                     ptz: vec![],
                     extension: None
                 }
@@ -235,6 +257,18 @@ impl DeviceManagmentService {
 
 
 //===| Support functions |=======
+
+fn build_address(root: &Uri, path: &str) -> Uri {
+    let parts = root.clone().into_parts();
+
+    // TODO: better means of constructing one URI from another
+    Uri::builder()
+        .scheme(parts.scheme.expect("Cannot handle missing scheme"))
+        .authority(parts.authority.expect("Cannot handle missing authority"))
+        .path_and_query(path)
+        .build()
+        .expect("Cannot deconstruct service root")
+}
 
 fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
     onvif::DateTime{

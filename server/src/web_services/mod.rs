@@ -10,7 +10,10 @@ pub struct ServiceErrorDetail {
     detail: Option<String>
 }
 
-const DEVICE_MANAGEMENT_PATH: &str = "/picam/device-management";
+const DEVICE_MANAGEMENT_PATH: &str = "/pepys/device-management";
+const EVENT_MANAGEMENT_PATH: &str = "/pepys/event-management";
+const IMAGING_MANAGEMENT_PATH: &str = "/pepys/imaging-management";
+const MEDIA_MANAGEMENT_PATH: &str = "/pepys/media-management";
 
 //===| Common means of communicating errors from service implementations |============
 
@@ -52,7 +55,12 @@ impl WebServices {
     pub fn new(service_root: &Uri) -> Self {
 
         Self {
-            device_management_service: DeviceManagmentService::new(service_root, DEVICE_MANAGEMENT_PATH),
+            device_management_service: DeviceManagmentService::new(service_root,
+                DEVICE_MANAGEMENT_PATH,
+                EVENT_MANAGEMENT_PATH,
+                IMAGING_MANAGEMENT_PATH,
+                MEDIA_MANAGEMENT_PATH
+            ),
         }
     }
 
