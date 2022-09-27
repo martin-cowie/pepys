@@ -13,6 +13,9 @@ use hyper::StatusCode;
 use crate::rpi;
 use super::ServiceErrorDetail;
 
+static VERSION_MAJOR: i32 = 2;
+static VERSION_MINOR: i32 = 5;
+
 pub struct DeviceManagmentService {
     service_address: Uri,
 
@@ -46,8 +49,8 @@ impl DeviceManagmentService {
             request::Body::GetSystemDateAndTime(_) => self.get_system_date_and_time()?,
             request::Body::GetCapabilities(_) => self.get_capabilities()?,
             request::Body::GetRelayOutputs(_) => self.get_relay_outputs()?,
-            // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?,
-            // request::Body::GetServices(_) => todo!(),
+            // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?, // Deliberately omitted
+            request::Body::GetServices(_) => self.get_services()?,
 
             _ => {
                 return Err(ServiceErrorDetail::new(
@@ -81,8 +84,8 @@ impl DeviceManagmentService {
                 system_logging: false,
                 firmware_upgrade: false,
                 supported_versions: vec![onvif::OnvifVersion{
-                    major: 2,
-                    minor: 5 }], //TODO: Get from config
+                    major: VERSION_MAJOR,
+                    minor: VERSION_MINOR }], //TODO: Get from config
                 extension: None }),
             io: Some(onvif::Iocapabilities{
                 input_connectors: Some(0),
@@ -267,6 +270,48 @@ impl DeviceManagmentService {
             })
         })
     }
+
+    fn get_services(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+
+        Ok(response::Envelope {
+            body: response::Body::GetServicesResponse(devicemgmt::GetServicesResponse {
+                service:vec![
+                    devicemgmt::Service {
+                        namespace: "http://www.onvif.org/ver10/device/wsdl".to_string(),
+                        x_addr: self.service_address.to_string(),
+                        capabilities: None,
+                        version: onvif::OnvifVersion{
+                            major: VERSION_MAJOR,
+                            minor: VERSION_MINOR
+                        }
+                    },
+                    devicemgmt::Service {
+                        namespace: "http://www.onvif.org/ver20/imaging/wsdl".to_string(),
+                        x_addr: self.imaging_address.to_string(),
+                        capabilities: None,
+                        version: onvif::OnvifVersion{
+                            major: VERSION_MAJOR,
+                            minor: VERSION_MINOR
+                        }
+                    },
+
+                    devicemgmt::Service {
+                        namespace: "http://www.onvif.org/ver10/media/wsdl".to_string(),
+                        x_addr: self.media_address.to_string(),
+                        capabilities: None,
+                        version: onvif::OnvifVersion{
+                            major: VERSION_MAJOR,
+                            minor: VERSION_MINOR
+                        }
+                    }
+                ]
+            })
+        })
+
+    }
+
+
+
 }
 
 
