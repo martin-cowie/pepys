@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">
+	<s:Header>
+		<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+			<wsse:UsernameToken>
+				<wsse:Username>admin</wsse:Username>
+				<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">MK+DSJ2HpfsmDm7IWYvuDDL6xFk=</wsse:Password>
+				<wsse:Nonce>MbMbUS0OzwEjCfOhATDvxA==</wsse:Nonce>
+				<wsu:Created>2022-03-07T13:19:39Z</wsu:Created>
+			</wsse:UsernameToken>
+		</wsse:Security>
+	</s:Header>
+	<s:Body xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+		<GetMoveOptions xmlns="http://www.onvif.org/ver20/imaging/wsdl">
+			<VideoSourceToken>video_src_token</VideoSourceToken>
+		</GetMoveOptions>
+	</s:Body>
+</s:Envelope>

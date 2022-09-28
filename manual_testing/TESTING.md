@@ -46,3 +46,8 @@ curl -s -X POST -d @./data/GetServices.xml http://localhost:8088/pepys/device_se
 ```
 curl -s -X POST -d @./data/GetOptions.xml http://localhost:8088/pepys/imaging_service | xmllint --format -
 ```
+
+* GetMoveOptions
+```
+curl -s -X POST -d @./data/GetMoveOptions.xml http://localhost:8088/pepys/imaging_service | xmllint --format -
+```

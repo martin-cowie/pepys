@@ -64,7 +64,16 @@ impl ImagingService {
     }
 
     fn get_move_options(&self) -> Result<imaging::response::Envelope, ServiceErrorDetail> {
-        todo!()
+        // All 'None' as there is no PTZ implementation
+        Ok(response::Envelope {
+            body: imaging::response::Body::GetMoveOptionsResponse(imaging::GetMoveOptionsResponse {
+                move_options: onvif::MoveOptions20 {
+                    absolute: None,
+                    relative: None,
+                    continuous: None
+                }
+            })
+        })
     }
 
 }
