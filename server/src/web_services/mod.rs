@@ -1,11 +1,13 @@
 pub(crate) mod devicemgmt;
 pub(crate) mod imaging;
+pub(crate) mod media;
 
 use std::error::Error;
 use hyper::{Method, StatusCode, body::Buf, Uri};
 
 use self::devicemgmt::DeviceManagmentService;
 use self::imaging::ImagingService;
+use self::media::MediaService;
 
 #[derive(Debug)]
 pub struct ServiceErrorDetail {
@@ -50,7 +52,8 @@ impl Error for ServiceErrorDetail{}
 
 pub struct WebServices {
     device_management_service: DeviceManagmentService,
-    imaging_service: ImagingService
+    imaging_service: ImagingService,
+    media_service: MediaService
 }
 
 impl WebServices {
@@ -63,7 +66,8 @@ impl WebServices {
                 IMAGING_MANAGEMENT_PATH,
                 MEDIA_MANAGEMENT_PATH
             ),
-            imaging_service: ImagingService::new()
+            imaging_service: ImagingService::new(),
+            media_service: MediaService::new()
         }
     }
 
@@ -101,7 +105,20 @@ impl WebServices {
                 }
             },
 
+            (&Method::POST, MEDIA_MANAGEMENT_PATH) => {
+                let whole_body = hyper::body::to_bytes(req.into_body()).await?;
+                tracing::info!("Responding to {} bytes of request for URI {} from {}", whole_body.len(), uri_path, origin);
 
+                let result = self.media_service.process_request(whole_body.reader());
+                    match result {
+                    Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
+                    Err(detail) => {
+                        tracing::error!("Cannot handle request: {:?}", &detail);
+                        Ok(detail.into_response())
+                    }
+                }
+
+            },
 
             // Return 404 Not Found for all other methods & URIs.
             _ => {

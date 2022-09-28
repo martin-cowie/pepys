@@ -54,5 +54,5 @@ curl -s -X POST -d @./data/imaging_service/GetMoveOptions.xml http://localhost:8
 
 ## Media Service
 ```
-curl -s -X POST -d @./data/media_service/GetProfiles.xml http://localhost:8088/pepys/imaging_service | xmllint --format -
+curl -s -X POST -d @./data/media_service/GetProfiles.xml http://localhost:8088/pepys/media_service | xmllint --format -
 ```

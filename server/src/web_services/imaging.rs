@@ -10,14 +10,10 @@ pub struct ImagingService {
 
 impl ImagingService {
     pub fn new() -> Self {
-        //TODO: implement
-
         Self {}
     }
 
     pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, ServiceErrorDetail> {
-        // Err(ServiceErrorDetail::new(StatusCode::NOT_IMPLEMENTED, Some("Come back soon".to_string())))
-
         let request: request::Envelope = yaserde::de::from_reader(payload)
             .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
 

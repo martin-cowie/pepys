@@ -11,7 +11,7 @@ pub mod request;
 pub mod response;
 
 
-// Generated from devicemgmt.xsd hereon ---------------------------------
+// Generated from devicemgmt.wsdl.xml hereon ---------------------------------
 
 //use ../../../ver10/schema/onvif.xsd  http://www.onvif.org/ver10/schema;
 #[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]

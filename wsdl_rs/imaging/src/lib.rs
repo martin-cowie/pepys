@@ -7,7 +7,7 @@ use yaserde_derive::{YaDeserialize, YaSerialize};
 pub mod request;
 pub mod response;
 
-// Generated from imaging.xsd hereon ---------------------------------
+// Generated from imaging.wsdl.xml hereon ---------------------------------
 
 //use ../../../ver10/schema/onvif.xsd  http://www.onvif.org/ver10/schema;
 #[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
