@@ -20,18 +20,16 @@ pub struct DeviceManagmentService {
     service_address: Uri,
 
     imaging_address: Uri,
-    event_address: Uri,
     media_address: Uri
 }
 
 impl DeviceManagmentService {
 
-    pub fn new(service_root: &Uri, path: &str, event_path: &str, imaging_path: &str, media_path: &str) -> Self {
+    pub fn new(service_root: &Uri, path: &str, imaging_path: &str, media_path: &str) -> Self {
 
         Self {
             service_address: build_address(service_root, path),
 
-            event_address: build_address(service_root, event_path),
             imaging_address: build_address(service_root, imaging_path),
             media_address: build_address(service_root, media_path),
         }
@@ -106,14 +104,6 @@ impl DeviceManagmentService {
             extension: None
         };
 
-        //TODO: get these details from the horses mouth
-        let events = onvif::EventCapabilities {
-            x_addr: self.event_address.to_string(),
-            ws_subscription_policy_support: false,
-            ws_pull_point_support: false,
-            ws_pausable_subscription_manager_interface_support: false,
-        };
-
         let imaging = onvif::ImagingCapabilities {
             x_addr: self.imaging_address.to_string()
         };
@@ -135,7 +125,7 @@ impl DeviceManagmentService {
                 capabilities: onvif::Capabilities {
                     analytics: vec![],
                     device: vec![device],
-                    events: vec![events],
+                    events: vec![],
                     imaging: vec![imaging],
                     media: vec![media],
                     ptz: vec![],

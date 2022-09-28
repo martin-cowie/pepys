@@ -14,7 +14,6 @@ pub struct ServiceErrorDetail {
 }
 
 const DEVICE_MANAGEMENT_PATH: &str = "/pepys/device_service";
-const EVENT_MANAGEMENT_PATH: &str = "/pepys/events_service";
 const IMAGING_MANAGEMENT_PATH: &str = "/pepys/imaging_service";
 const MEDIA_MANAGEMENT_PATH: &str = "/pepys/media_service";
 
@@ -61,7 +60,6 @@ impl WebServices {
         Self {
             device_management_service: DeviceManagmentService::new(service_root,
                 DEVICE_MANAGEMENT_PATH,
-                EVENT_MANAGEMENT_PATH,
                 IMAGING_MANAGEMENT_PATH,
                 MEDIA_MANAGEMENT_PATH
             ),
