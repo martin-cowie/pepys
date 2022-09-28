@@ -118,8 +118,8 @@ foreach my $node (@nodes) {
     my $inputStructName = $xp->find('string(@name)', $node);
     my $outputNode = $xp->find('string(wsdl:output/@message)', $node);
 
-    die "Cannot parse $outputNode" unless $outputNode =~ /^tds:(.*)$/ ;
-    my $outputStructName = $1;
+    die "Cannot parse $outputNode" unless $outputNode =~ /^(\w+):(.+)$/ ;
+    my $outputStructName = $2;
 
     push @requests, $inputStructName;
     push @responses, $outputStructName;

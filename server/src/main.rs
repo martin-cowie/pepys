@@ -22,7 +22,7 @@ const WEB_PORT: u16 = 8088;
 async fn main() -> Result<(), Box<dyn Error>>{
     tracing_subscriber::fmt::init();
 
-    let xaddrs = get_urls(WEB_PORT, "picam/device-management")?;
+    let xaddrs = get_urls(WEB_PORT, "pepys/device_service")?; //TODO: duplicate string
 
     // The inner layer of request handling machinery
     let web_services = {

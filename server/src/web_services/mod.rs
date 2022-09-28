@@ -1,8 +1,11 @@
 pub(crate) mod devicemgmt;
+pub(crate) mod imaging;
+
 use std::error::Error;
 use hyper::{Method, StatusCode, body::Buf, Uri};
 
-use crate::web_services::devicemgmt::DeviceManagmentService;
+use self::devicemgmt::DeviceManagmentService;
+use self::imaging::ImagingService;
 
 #[derive(Debug)]
 pub struct ServiceErrorDetail {
@@ -10,10 +13,10 @@ pub struct ServiceErrorDetail {
     detail: Option<String>
 }
 
-const DEVICE_MANAGEMENT_PATH: &str = "/pepys/device-management";
-const EVENT_MANAGEMENT_PATH: &str = "/pepys/event-management";
-const IMAGING_MANAGEMENT_PATH: &str = "/pepys/imaging-management";
-const MEDIA_MANAGEMENT_PATH: &str = "/pepys/media-management";
+const DEVICE_MANAGEMENT_PATH: &str = "/pepys/device_service";
+const EVENT_MANAGEMENT_PATH: &str = "/pepys/events_service";
+const IMAGING_MANAGEMENT_PATH: &str = "/pepys/imaging_service";
+const MEDIA_MANAGEMENT_PATH: &str = "/pepys/media_service";
 
 //===| Common means of communicating errors from service implementations |============
 
@@ -47,7 +50,8 @@ impl Error for ServiceErrorDetail{}
 //===| Web Services Controller |====================================
 
 pub struct WebServices {
-    device_management_service: DeviceManagmentService
+    device_management_service: DeviceManagmentService,
+    imaging_service: ImagingService
 }
 
 impl WebServices {
@@ -61,15 +65,31 @@ impl WebServices {
                 IMAGING_MANAGEMENT_PATH,
                 MEDIA_MANAGEMENT_PATH
             ),
+            imaging_service: ImagingService::new()
         }
     }
 
     pub async fn handle_http_request(&self, req: hyper::Request<hyper::Body>, origin: std::net::SocketAddr) -> Result<hyper::Response<hyper::Body>, hyper::Error> {
 
+        let uri_path = req.uri().path().to_string();
+
         match (req.method(), req.uri().path()) {
 
+            (&Method::POST, IMAGING_MANAGEMENT_PATH) => {
+                let whole_body = hyper::body::to_bytes(req.into_body()).await?;
+                tracing::info!("Responding to {} bytes of request for URI {} from {}", whole_body.len(), uri_path, origin);
+
+                let result = self.imaging_service.process_request(whole_body.reader());
+                    match result {
+                    Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
+                    Err(detail) => {
+                        tracing::error!("Cannot handle request: {:?}", &detail);
+                        Ok(detail.into_response())
+                    }
+                }
+            }
+
             (&Method::POST, DEVICE_MANAGEMENT_PATH) => {
-                let uri_path = req.uri().path().to_string();
                 let whole_body = hyper::body::to_bytes(req.into_body()).await?;
                 tracing::info!("Responding to {} bytes of request for URI {} from {}", whole_body.len(), uri_path, origin);
 
@@ -82,6 +102,8 @@ impl WebServices {
                     }
                 }
             },
+
+
 
             // Return 404 Not Found for all other methods & URIs.
             _ => {

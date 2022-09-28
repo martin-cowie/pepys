@@ -19,6 +19,8 @@ yaserde_derive = "0.7.1"
 hyper = { version = "0.14.20", features = ["server", "stream", "http1", "tcp"] }
 
 devicemgmt = {path = "../wsdl_rs/devicemgmt"}
+imaging = {path = "../wsdl_rs/imaging"}
+
 onvif = { package = "onvif", path = "../xsd_rs/onvif" }
 libc-strftime = "0.2.0"
 network-interface = "0.1.3"

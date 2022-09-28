@@ -3,6 +3,7 @@ members = [
     "server",
 
     "wsdl_rs/devicemgmt",
+    "wsdl_rs/imaging",
 
     "xsd_rs/onvif",
 
