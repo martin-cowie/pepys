@@ -19,6 +19,14 @@ const DEVICE_MANAGEMENT_PATH: &str = "/pepys/device_service";
 const IMAGING_MANAGEMENT_PATH: &str = "/pepys/imaging_service";
 const MEDIA_MANAGEMENT_PATH: &str = "/pepys/media_service";
 
+//============================================================
+
+/// Get example instance of this object.
+/// Intentionally different from Default.
+pub(crate) trait ExampleData<T> {
+    fn example() -> T;
+}
+
 //===| Common means of communicating errors from service implementations |============
 
 impl ServiceErrorDetail  {
