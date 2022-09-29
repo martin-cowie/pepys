@@ -11,4 +11,4 @@ xml-rs = "0.8.3" # Required by UtilsDefaultSerde
 yaserde = "0.7.1" # TODO: bring this upto date - Specific version required by xsd-types
 yaserde_derive = "0.7.1"
 xsd-macro-utils = { git = "https://github.com/lumeohq/xsd-parser-rs" } # Not listed in crates.io, so pulling from github
-xsd-types = { git = "https://github.com/lumeohq/xsd-parser-rs" } # TODO: get a specific revision
+xsd-types = { git = "https://github.com/lumeohq/xsd-parser-rs", rev = "7f3d433"} # TODO: get a specific revision

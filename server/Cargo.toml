@@ -17,6 +17,7 @@ uuid = { version = "1.1.2", features = ["v4"] }
 yaserde = "0.7.1"
 yaserde_derive = "0.7.1"
 hyper = { version = "0.14.20", features = ["server", "stream", "http1", "tcp"] }
+xsd-types = { git = "https://github.com/lumeohq/xsd-parser-rs", rev = "7f3d433" }
 
 devicemgmt = {path = "../wsdl_rs/devicemgmt"}
 imaging = {path = "../wsdl_rs/imaging"}
