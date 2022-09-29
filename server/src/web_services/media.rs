@@ -24,10 +24,10 @@ impl MediaService {
             media::request::Body::GetProfile(_) => self.get_profile(&request)?,
             media::request::Body::GetProfiles(_) => self.get_profiles()?,
 
-            // media::request::Body::GetAudioEncoderConfigurationOptions(_) => todo!(),
-            // media::request::Body::GetGuaranteedNumberOfVideoEncoderInstances(_) => todo!(),
+            media::request::Body::GetAudioEncoderConfigurationOptions(_) => self.get_audio_encoder_configuration_options(&request)?,
+            media::request::Body::GetGuaranteedNumberOfVideoEncoderInstances(_) => self.get_guaranteed_number_of_video_encoder_instances(&request)?,
+            media::request::Body::GetServiceCapabilities(_) => self.get_service_capabilities(&request)?,
 
-            // media::request::Body::GetServiceCapabilities(_) => todo!(),
             // media::request::Body::GetSnapshotUri(_) => todo!(),
             // media::request::Body::GetStreamUri(_) => todo!(),
 
@@ -53,6 +53,37 @@ impl MediaService {
         let result = yaserde::ser::to_string(&response)
             .map_err(|ser_err| ServiceErrorDetail::new(StatusCode::INTERNAL_SERVER_ERROR, Some(ser_err)))?;
         Ok(result)
+    }
+
+    //====| Misc |=============================================================
+
+    fn get_audio_encoder_configuration_options(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+        Ok(media::response::Envelope{
+            body: media::response::Body::GetAudioEncoderConfigurationOptionsResponse(media::GetAudioEncoderConfigurationOptionsResponse {
+                options: AudioEncoderConfigurationOptions {
+                    options: vec![],
+                }
+            })
+        })
+    }
+
+    fn get_guaranteed_number_of_video_encoder_instances(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+        Ok(media::response::Envelope{
+            body: media::response::Body::GetGuaranteedNumberOfVideoEncoderInstancesResponse(media::GetGuaranteedNumberOfVideoEncoderInstancesResponse {
+                total_number: 1,
+                jpeg: None,
+                h264: Some(1),
+                mpeg4: None
+            })
+        })
+    }
+
+    fn get_service_capabilities(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+        Ok(media::response::Envelope{
+            body: media::response::Body::GetServiceCapabilitiesResponse(media::GetServiceCapabilitiesResponse {
+                capabilities: Capabilities::example()
+             })
+        })
     }
 
     //====| Video Encoder Configurations |=====================================
@@ -146,6 +177,55 @@ impl MediaService {
 }
 
 use super::ExampleData;
+
+impl ExampleData<media::Capabilities> for Capabilities {
+    fn example() -> media::Capabilities {
+
+        media::Capabilities {
+            profile_capabilities: vec![
+                media::ProfileCapabilities {
+                    maximum_number_of_profiles: Some(
+                        1,
+                    ),
+                },
+            ],
+            streaming_capabilities: vec![
+                media::StreamingCapabilities {
+                    rtp_multicast: Some(
+                        false,
+                    ),
+                    rtp_tcp: Some(
+                        true,
+                    ),
+                    rtp_rtsp_tcp: Some(
+                        true,
+                    ),
+                    non_aggregate_control: Some(
+                        false,
+                    ),
+                    no_rtsp_streaming: Some(
+                        false,
+                    ),
+                },
+            ],
+            snapshot_uri: Some(
+                true,
+            ),
+            rotation: Some(
+                false,
+            ),
+            video_source_mode: Some(
+                true,
+            ),
+            osd: Some(
+                false,
+            ),
+            temporary_osd_text: None,
+            exi_compression: None,
+        }
+
+    }
+}
 
 impl ExampleData<VideoSourceConfiguration> for VideoSourceConfiguration {
     fn example() -> VideoSourceConfiguration {
