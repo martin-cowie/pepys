@@ -36,8 +36,9 @@ impl MediaService {
             media::request::Body::GetVideoEncoderConfigurationOptions(_) => self.get_video_encoder_configuration_options(&request)?,
             media::request::Body::SetVideoEncoderConfiguration(_) => self.set_video_encoder_configuration(&request)?,
 
-            // media::request::Body::GetVideoSourceConfigurationOptions(_) => todo!(),
-            media::request::Body::GetVideoSourceConfigurations(_) => self.get_video_source_configurations()?,
+
+            media::request::Body::GetVideoSourceConfiguration(_) => self.get_video_source_configuration(&request)?,
+            media::request::Body::GetVideoSourceConfigurations(_) => self.get_video_source_configurations(&request)?,
 
 
             _ => {
@@ -123,18 +124,53 @@ impl MediaService {
         })
     }
 
-    fn get_video_source_configurations(&self) -> Result<media::response::Envelope, ServiceErrorDetail> {
-        Err(ServiceErrorDetail::new(
-            StatusCode::NOT_IMPLEMENTED,
-            Some("Service skeleton only.".to_string())
-        ))
+    //====| Video Source Configuration |=========================================================
+
+    fn get_video_source_configuration(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+        Ok(media::response::Envelope{
+            body: media::response::Body::GetVideoSourceConfigurationResponse(media::GetVideoSourceConfigurationResponse {
+                configuration: VideoSourceConfiguration::example(),
+            })
+        })
     }
 
 
+    fn get_video_source_configurations(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+        Ok(media::response::Envelope{
+            body: media::response::Body::GetVideoSourceConfigurationsResponse(media::GetVideoSourceConfigurationsResponse {
+                configurations: vec![VideoSourceConfiguration::example()]
+            })
+        })
+    }
 
 }
 
 use super::ExampleData;
+
+impl ExampleData<VideoSourceConfiguration> for VideoSourceConfiguration {
+    fn example() -> VideoSourceConfiguration {
+        VideoSourceConfiguration {
+            source_token: ReferenceToken(
+                "video_src_token".to_string(),
+            ),
+            bounds: IntRectangle {
+                x: 0,
+                y: 0,
+                width: 1920,
+                height: 1080,
+            },
+            extension: None,
+            view_mode: None,
+            name: Name(
+                "Primary Source".to_string(),
+            ),
+            use_count: 0,
+            token: ReferenceToken(
+                "video_src_config_token".to_string(),
+            )
+        }
+    }
+}
 
 impl ExampleData<VideoEncoderConfigurationOptions> for VideoEncoderConfigurationOptions {
     fn example() -> VideoEncoderConfigurationOptions {
@@ -266,8 +302,6 @@ impl ExampleData<VideoEncoderConfiguration> for VideoEncoderConfiguration {
         }
     }
 }
-
-
 
 impl ExampleData<Profile> for Profile {
     fn example() -> Profile {
