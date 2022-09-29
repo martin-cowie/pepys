@@ -19,6 +19,9 @@ members = [
 
     "validate"
 ]
+exclude = [
+    "build_scripts/xml-to-rs"
+]
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.
