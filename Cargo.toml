@@ -23,6 +23,14 @@ exclude = [
     "build_scripts/xml-to-rs"
 ]
 
+[workspace.package]
+authors = ["Martin Cowie"]
+version = "0.1.0"
+edition = "2021"
+readme = "./README.md"
+repository = "https://github.com/martin-cowie/pepys"
+
+
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.
 opt-level = "z"  # Optimize for size.

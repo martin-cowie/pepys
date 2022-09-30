@@ -1,9 +1,9 @@
 [package]
 name = "pepys"
-authors = ["Martin Cowie"]
 description = "An ONVIF server for the Raspberry Pi Camera"
-version = "0.1.0"
-edition = "2021"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 chrono = "0.4.22"

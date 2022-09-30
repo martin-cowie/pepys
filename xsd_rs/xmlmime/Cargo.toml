@@ -1,7 +1,8 @@
 [package]
 name = "xmlmime"
-version = "0.1.0"
-edition = "2021"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 validate = { path = "../../validate" }
