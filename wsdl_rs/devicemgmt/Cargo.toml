@@ -9,8 +9,8 @@ validate = { path = "../../validate" }
 soapenv = { path = "../../xsd_rs/soapenv" }
 onvif = { package = "onvif", path = "../../xsd_rs/onvif" }
 
-xml-rs = "0.8.3"
-xsd-macro-utils = { git = "https://github.com/lumeohq/xsd-parser-rs", rev = "7f3d433" }
-xsd-types = { git = "https://github.com/lumeohq/xsd-parser-rs", rev = "7f3d433" }
-yaserde = "0.7.1"
-yaserde_derive = "0.7.1"
+xml-rs.workspace = true
+xsd-macro-utils.workspace = true
+xsd-types.workspace = true
+yaserde.workspace = true
+yaserde_derive.workspace = true

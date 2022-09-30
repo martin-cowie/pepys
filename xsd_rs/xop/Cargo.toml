@@ -6,6 +6,6 @@ edition.workspace = true
 
 [dependencies]
 validate = { path = "../../validate" }
-xml-rs = "0.8.3"
-yaserde = "0.7.1"
-yaserde_derive = "0.7.1"
+xml-rs.workspace = true
+yaserde.workspace = true
+yaserde_derive.workspace = true
