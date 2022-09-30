@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">
+	<s:Header>
+		<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+			<wsse:UsernameToken>
+				<wsse:Username>admin</wsse:Username>
+				<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">Ab75bIiEIr3MO6PGSEQCZE/SOMw=</wsse:Password>
+				<wsse:Nonce>9V+1xELAOjEaROQdkDYG1g==</wsse:Nonce>
+				<wsu:Created>2022-03-07T13:19:55Z</wsu:Created>
+			</wsse:UsernameToken>
+		</wsse:Security>
+	</s:Header>
+	<s:Body xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+		<GetStreamUri xmlns="http://www.onvif.org/ver10/media/wsdl">
+			<StreamSetup>
+				<Stream xmlns="http://www.onvif.org/ver10/schema">RTP-Unicast</Stream>
+				<Transport xmlns="http://www.onvif.org/ver10/schema">
+					<Protocol>RTSP</Protocol>
+				</Transport>
+			</StreamSetup>
+			<ProfileToken>profile_token</ProfileToken>
+		</GetStreamUri>
+	</s:Body>
+</s:Envelope>

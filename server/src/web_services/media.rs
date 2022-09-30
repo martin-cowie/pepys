@@ -6,11 +6,16 @@ use onvif::*;
 use xsd_types::types::Duration;
 
 pub struct MediaService {
+    snapshot_uri: hyper::Uri,
+    stream_uri: hyper::Uri
 }
 
 impl MediaService {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(snapshot_uri: hyper::Uri, stream_uri: hyper::Uri) -> Self {
+        Self {
+            snapshot_uri,
+            stream_uri
+        }
     }
 
     pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, ServiceErrorDetail> {
@@ -27,8 +32,8 @@ impl MediaService {
             media::request::Body::GetGuaranteedNumberOfVideoEncoderInstances(_) => self.get_guaranteed_number_of_video_encoder_instances(&request)?,
             media::request::Body::GetServiceCapabilities(_) => self.get_service_capabilities(&request)?,
 
-            // media::request::Body::GetSnapshotUri(_) => todo!(),
-            // media::request::Body::GetStreamUri(_) => todo!(),
+            media::request::Body::GetSnapshotUri(_) => self.get_snapshot_uri(&request)?,
+            media::request::Body::GetStreamUri(_) => self.get_stream_uri(&request)?,
 
             media::request::Body::GetVideoEncoderConfiguration(_) => self.get_video_encoder_configuration(&request)?,
             media::request::Body::GetVideoEncoderConfigurations(_) => self.get_video_encoder_configurations(&request)?,
@@ -55,6 +60,35 @@ impl MediaService {
     }
 
     //====| Misc |=============================================================
+
+
+    fn get_snapshot_uri(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+        Ok(media::response::Envelope{
+            body: media::response::Body::GetSnapshotUriResponse(media::GetSnapshotUriResponse {
+                media_uri: MediaUri {
+                    uri: self.snapshot_uri.to_string(),
+                    invalid_after_connect: false,
+                    invalid_after_reboot: false,
+                    timeout: Duration { is_negative: false, years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 30.0 }
+                }
+            })
+        })
+    }
+
+    fn get_stream_uri(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+        Ok(media::response::Envelope{
+            body: media::response::Body::GetStreamUriResponse(media::GetStreamUriResponse {
+
+                media_uri: MediaUri {
+                    uri: self.stream_uri.to_string(),
+                    invalid_after_connect: false,
+                    invalid_after_reboot: false,
+                    timeout: Duration { is_negative: false, years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 30.0 }
+                }
+
+            })
+        })
+    }
 
     fn get_audio_encoder_configuration_options(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
         Ok(media::response::Envelope{

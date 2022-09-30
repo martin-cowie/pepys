@@ -13,10 +13,8 @@ pub struct Envelope {
 }
 
 #[derive(Debug, YaSerialize, YaDeserialize)]
-#[yaserde(
-    prefix = "s",
-    namespace = "s: http://www.w3.org/2003/05/soap-envelope",
-)]
+#[yaserde(prefix = "s",namespace = "s: http://www.w3.org/2003/05/soap-envelope",)]
+#[yaserde(prefix = "trt", namespace = "trt: http://www.onvif.org/ver10/media/wsdl")]
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 
@@ -65,7 +63,7 @@ pub enum Body {
 	GetProfileResponse(super::GetProfileResponse),
 	GetProfilesResponse(super::GetProfilesResponse),
 	GetServiceCapabilitiesResponse(super::GetServiceCapabilitiesResponse),
-	GetSnapshotUriResponse(super::GetSnapshotUriResponse),
+    GetSnapshotUriResponse(super::GetSnapshotUriResponse),
 	GetStreamUriResponse(super::GetStreamUriResponse),
 	GetVideoAnalyticsConfigurationResponse(super::GetVideoAnalyticsConfigurationResponse),
 	GetVideoAnalyticsConfigurationsResponse(super::GetVideoAnalyticsConfigurationsResponse),

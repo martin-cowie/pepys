@@ -68,6 +68,9 @@ impl WebServices {
 
     pub fn new(service_root: &Uri) -> Self {
 
+        let snapshot_uri = "http://example.com/snapshot".parse().expect("Cannot parse URL");
+        let stream_uri = "http://example.com/stream".parse().expect("Cannot parse URL");
+
         Self {
             device_management_service: DeviceManagmentService::new(service_root,
                 DEVICE_MANAGEMENT_PATH,
@@ -75,7 +78,7 @@ impl WebServices {
                 MEDIA_MANAGEMENT_PATH
             ),
             imaging_service: ImagingService::new(),
-            media_service: MediaService::new()
+            media_service: MediaService::new(snapshot_uri, stream_uri)
         }
     }
 

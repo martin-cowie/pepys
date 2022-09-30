@@ -13,10 +13,8 @@ pub struct Envelope {
 }
 
 #[derive(Debug, YaSerialize, YaDeserialize)]
-#[yaserde(
-    prefix = "s",
-    namespace = "s: http://www.w3.org/2003/05/soap-envelope",
-)]
+#[yaserde( prefix = "s", namespace = "s: http://www.w3.org/2003/05/soap-envelope")]
+#[yaserde(prefix = "timg", namespace = "timg: http://www.onvif.org/ver20/imaging/wsdl")]
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 
