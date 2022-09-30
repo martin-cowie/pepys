@@ -2,7 +2,6 @@ use super::ServiceErrorDetail;
 use hyper::StatusCode;
 
 use media::request;
-
 use onvif::*;
 use xsd_types::types::Duration;
 
@@ -175,6 +174,8 @@ impl MediaService {
     }
 
 }
+
+//====| Example Data Implementations |=========================================================
 
 use super::ExampleData;
 

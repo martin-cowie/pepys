@@ -11,6 +11,7 @@ use hyper::StatusCode;
 
 
 use crate::rpi;
+use super::ExampleData;
 use super::ServiceErrorDetail;
 
 static VERSION_MAJOR: i32 = 2;
@@ -132,6 +133,7 @@ impl DeviceManagmentService {
                     extension: None
                 }
         })})
+
     }
 
     fn get_network_interfaces(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
@@ -189,15 +191,11 @@ impl DeviceManagmentService {
         })
     }
 
-
     fn get_ntp(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
         Ok(response::Envelope{
-            body: response::Body::GetNTPResponse(devicemgmt::GetNTPResponse{ ntp_information: Ntpinformation{
-                from_dhcp: true, //TODO: get from configuration
-                ntp_from_dhcp: vec![],
-                ntp_manual: vec![],
-                extension: None
-            } })
+            body: response::Body::GetNTPResponse(devicemgmt::GetNTPResponse{
+                ntp_information: onvif::Ntpinformation::example()
+            })
         })
     }
 
@@ -246,17 +244,9 @@ impl DeviceManagmentService {
 }
 
     fn get_relay_outputs(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
-
         Ok(response::Envelope {
             body: response::Body::GetRelayOutputsResponse( devicemgmt::GetRelayOutputsResponse {
-                relay_outputs: vec![onvif::RelayOutput{
-                    properties: onvif::RelayOutputSettings {
-                        mode: onvif::RelayMode::Bistable,
-                        delay_time: "5s".to_string(), //FIXME: a guess
-                        idle_state: onvif::RelayIdleState::Open
-                    },
-                    token:  onvif::ReferenceToken("relay1".to_string())
-                }]
+                relay_outputs: vec![onvif::RelayOutput::example()]
             })
         })
     }
@@ -300,11 +290,33 @@ impl DeviceManagmentService {
 
     }
 
-
-
 }
 
+//====| Example Data Implementations |=========================================================
 
+impl ExampleData<onvif::Ntpinformation> for onvif::Ntpinformation {
+    fn example() -> onvif::Ntpinformation {
+        Ntpinformation{
+            from_dhcp: true,
+            ntp_from_dhcp: vec![],
+            ntp_manual: vec![],
+            extension: None
+        }
+    }
+}
+
+impl ExampleData<onvif::RelayOutput> for onvif::RelayOutput {
+    fn example() -> onvif::RelayOutput {
+        onvif::RelayOutput{
+            properties: onvif::RelayOutputSettings {
+                mode: onvif::RelayMode::Bistable,
+                delay_time: "5s".to_string(), //FIXME: a guess
+                idle_state: onvif::RelayIdleState::Open
+            },
+            token:  onvif::ReferenceToken("relay1".to_string())
+        }
+    }
+}
 
 
 //===| Support functions |=======
