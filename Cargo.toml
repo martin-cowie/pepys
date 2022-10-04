@@ -17,7 +17,8 @@ members = [
     "xsd_rs/ws_addr",
     "xsd_rs/xop",
 
-    "validate"
+    "validate",
+    "a12n"
 ]
 exclude = [
     "build_scripts/xml-to-rs"
