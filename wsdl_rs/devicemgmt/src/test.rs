@@ -23,6 +23,11 @@ fn test_get_capabilities() {
 
     let envelope: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(envelope.body, request::Body::GetCapabilities(_)));
+
+    let security = envelope.header.unwrap().security.unwrap();
+    assert_eq!(security.username_token.username, "admin");
+    assert!(security.is_password_authentic("password123") );
+
 }
 
 #[test]
@@ -46,6 +51,10 @@ fn test_get_device_information() {
 
     let envelope: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(envelope.body, request::Body::GetDeviceInformation(_)));
+
+    let security = envelope.header.unwrap().security.unwrap();
+    assert_eq!(security.username_token.username, "admin");
+    assert!(security.is_password_authentic("password123") );
 }
 
 #[test]
@@ -69,6 +78,10 @@ fn test_get_network_interfaces() {
 
     let envelope: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(envelope.body, request::Body::GetNetworkInterfaces(_)));
+
+    let security = envelope.header.unwrap().security.unwrap();
+    assert_eq!(security.username_token.username, "admin");
+    assert!(security.is_password_authentic("password123") );
 }
 
 #[test]
@@ -92,6 +105,10 @@ fn test_get_ntp() {
 
     let envelope: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(envelope.body, request::Body::GetNTP(_)));
+
+    let security = envelope.header.unwrap().security.unwrap();
+    assert_eq!(security.username_token.username, "admin");
+    assert!(security.is_password_authentic("password123") );
 }
 
 #[test]
@@ -115,6 +132,10 @@ fn test_get_relay_outputs() {
 
     let envelope: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(envelope.body, request::Body::GetRelayOutputs(_)));
+
+    let security = envelope.header.unwrap().security.unwrap();
+    assert_eq!(security.username_token.username, "admin");
+    assert!(security.is_password_authentic("password123") );
 }
 
 #[test]
@@ -140,6 +161,10 @@ fn test_get_services() {
 
     let envelope: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(envelope.body, request::Body::GetServices(_)));
+
+    let security = envelope.header.unwrap().security.unwrap();
+    assert_eq!(security.username_token.username, "admin");
+    assert!(security.is_password_authentic("password123") );
 }
 
 #[test]
@@ -170,6 +195,10 @@ fn test_set_relay_output_settings() {
 
     let envelope: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(envelope.body, request::Body::SetRelayOutputSettings(_)));
+
+    let security = envelope.header.unwrap().security.unwrap();
+    assert_eq!(security.username_token.username, "admin");
+    assert!(security.is_password_authentic("password123") );
 
 }
 
@@ -203,6 +232,10 @@ fn test_get_profile_request() {
     let envelope: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(envelope.body, request::Body::SetRelayOutputSettings(_)));
 
+    let security = envelope.header.unwrap().security.unwrap();
+    assert_eq!(security.username_token.username, "admin");
+    assert!(security.is_password_authentic("password123") );
+
 }
 
 #[test]
@@ -216,6 +249,8 @@ fn test_get_system_date_and_time() {
 
     let env: request::Envelope = yaserde::de::from_str(xml_str).unwrap();
     assert!(matches!(env.body, request::Body::GetSystemDateAndTime(_)));
+
+    assert!(env.header.is_none());
 }
 
 #[test]

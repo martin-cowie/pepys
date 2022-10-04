@@ -10,6 +10,9 @@ use validate::Validate;
 // Runtime dependencies
 use std::str::FromStr;
 
+#[cfg(test)]
+mod test;
+
 // Generated from soapenv.xsd hereon ---------------------------------
 
 
@@ -33,7 +36,18 @@ impl Validate for Envelope {}
 // the targetNamespace
 #[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
 #[yaserde(prefix = "tns", namespace = "tns: http://www.w3.org/2003/05/soap-envelope")]
-pub struct Header {}
+pub struct Header {
+
+    //NB: Manually added
+    #[yaserde(
+        rename = "Security",
+        prefix = "wsse",
+        namespace = "wsse: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd",
+        namespace = "wsu: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+    )]
+    pub security: Option<a12n::Security>
+
+}
 
 impl Validate for Header {}
 

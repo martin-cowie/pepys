@@ -6,6 +6,8 @@ edition.workspace = true
 
 [dependencies]
 validate = { path = "../../validate" }
+a12n = {path = "../../a12n" }
+
 xml-rs.workspace = true # Required by UtilsDefaultSerde
 yaserde.workspace = true # TODO: bring this upto date - Specific version required by xsd-types
 yaserde_derive.workspace = true

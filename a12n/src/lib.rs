@@ -1,7 +1,7 @@
 use yaserde_derive::*;
 use sha1::{Sha1, Digest};
 
-#[derive(Default, Debug, YaDeserialize)]
+#[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
 pub struct Password {
     #[yaserde(attribute, rename = "Type")]
     pub password_type: String,
@@ -10,7 +10,7 @@ pub struct Password {
     pub content: String
 }
 
-#[derive(Default, Debug, YaDeserialize)]
+#[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
 #[yaserde(
     prefix = "wsse",
     namespace = "wsse: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd",
@@ -31,7 +31,7 @@ pub struct UsernameToken {
     pub created: String
 }
 
-#[derive(Default, Debug, YaDeserialize)]
+#[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
 #[yaserde(
     prefix = "wsse",
     namespace = "wsse: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd",
@@ -43,9 +43,18 @@ pub struct Security {
     pub username_token: UsernameToken
 }
 
+const PASSWORD_DIGEST: &str = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest";
 
 impl Security {
+
+    // Return true if this Authentication Request is a password digest request,
+    // and the encoded password matches the given argument. NB: does not authenticate
+    // the username.
     pub fn is_password_authentic(&self, password: &str) -> bool {
+
+        if self.username_token.password.password_type != PASSWORD_DIGEST {
+            return false;
+        }
 
         //1. b64 decode the nonce
         let nonce = match base64::decode(&self.username_token.nonce) {
