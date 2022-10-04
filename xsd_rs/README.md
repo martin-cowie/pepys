@@ -33,11 +33,11 @@ use std::str::FromStr;
 5. Add the following dependcies to the new package's `Cargo.toml`
 ```
 validate = { path = "../../validate" }
-xml-rs = "0.8.3" # Required by UtilsDefaultSerde
-yaserde = "0.7.1" # TODO: bring this upto date - Specific version required by xsd-types
-yaserde_derive = "0.7.1"
-xsd-macro-utils = { git = "https://github.com/lumeohq/xsd-parser-rs" } # Not listed in crates.io, so pulling from github
-xsd-types = { git = "https://github.com/lumeohq/xsd-parser-rs" } # TODO: get a specific revision
+xml-rs.workspace = true
+yaserde.workspace = true
+yaserde_derive.workspace = true
+xsd-macro-utils.workspace = true
+xsd-types.workspace = true
 ```
 5. Run `cargo clippy` and remove any unused `use` statements, and any related dependencies from `Cargo.toml`
 5. Resolve any missing dependencies: generated code can include commented type hints such as `// pub type Filter = FilterType;` which are the most likely solution to missing types.

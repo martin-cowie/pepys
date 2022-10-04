@@ -9,6 +9,6 @@ onvif = { package = "onvif", path = "../../xsd_rs/onvif" }
 soapenv = { path = "../../xsd_rs/soapenv" }
 validate = { path = "../../validate" }
 
-yaserde = "0.7.1"
-yaserde_derive = "0.7.1"
-xsd-types = { git = "https://github.com/lumeohq/xsd-parser-rs", rev = "7f3d433" }
+yaserde.workspace = true
+yaserde_derive.workspace = true
+xsd-types.workspace =true
