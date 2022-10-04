@@ -56,6 +56,49 @@ impl std::fmt::Display for ServiceErrorDetail {
 
 impl Error for ServiceErrorDetail{}
 
+//===| Authentication |=============================================
+
+const PASSWORD: &str = "password123"; //FIXME: obvs
+
+pub(crate) fn authenticate(header: &Option<soapenv::Header>) -> Result<(), ServiceErrorDetail> {
+
+    let auth_lacking = || ServiceErrorDetail::new(
+        StatusCode::FORBIDDEN,
+        Some("Authentication headers are lacking.".to_string())
+    );
+
+    let header = match header {
+        Some(header) => header,
+        None => return Err(auth_lacking()),
+    };
+
+    let security = match header.security {
+        Some(ref security) => security,
+        None => return Err(auth_lacking()),
+    };
+
+    if !security.is_password_authentic(PASSWORD) {
+        return Err(ServiceErrorDetail::new(
+            StatusCode::FORBIDDEN,
+            Some("Incorrect password".to_string())
+        ));
+    }
+
+    // FIXME: more compact edition, but was didn't like header being a reference
+    //
+    // if !header.ok_or_else(auth_lacking)?
+    //     .security.ok_or_else(auth_lacking)?
+    //     .is_password_authentic(PASSWORD) {
+    //         return Err(ServiceErrorDetail::new(
+    //             StatusCode::FORBIDDEN,
+    //             Some("Incorrect password".to_string())
+    //         ));
+    // }
+
+
+    Ok(())
+}
+
 //===| Web Services Controller |====================================
 
 pub struct WebServices {

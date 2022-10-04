@@ -17,6 +17,9 @@ impl ImagingService {
         let request: request::Envelope = yaserde::de::from_reader(payload)
             .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
 
+        // Check username/password
+        super::authenticate(&request.header)?;
+
         let response  = match request.body {
             request::Body::GetMoveOptions(_) => self.get_move_options()?,
             request::Body::GetOptions(_) => self.get_options()?,

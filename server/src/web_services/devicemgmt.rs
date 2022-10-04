@@ -37,9 +37,13 @@ impl DeviceManagmentService {
     }
 
     pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, ServiceErrorDetail> {
-
         let request: request::Envelope = yaserde::de::from_reader(payload)
             .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
+
+        //FIXME: get_system_date_and_time does NOT mandate a password header.
+
+        // Check username/password
+        super::authenticate(&request.header)?;
 
         let response = match request.body {
             request::Body::GetDeviceInformation(_) => self.get_device_information()?,

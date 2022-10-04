@@ -22,6 +22,9 @@ impl MediaService {
         let request: request::Envelope = yaserde::de::from_reader(payload)
             .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
 
+        // Check username/password
+        super::authenticate(&request.header)?;
+
         let response  = match request.body {
             media::request::Body::CreateProfile(_) => self.create_profile(&request)?,
             media::request::Body::DeleteProfile(_) => self.delete_profile(&request)?,
