@@ -40,28 +40,33 @@ impl DeviceManagmentService {
         let request: request::Envelope = yaserde::de::from_reader(payload)
             .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
 
-        //FIXME: get_system_date_and_time does NOT mandate a password header.
+        let response = if let request::Body::GetSystemDateAndTime(_) = request.body {
+            // NB: get_system_date_and_time does NOT mandate a password header.
+            self.get_system_date_and_time()?
+        } else {
 
-        // Check username/password
-        super::authenticate(&request.header)?;
+            // Check username/password
+            super::authenticate(&request.header)?;
 
-        let response = match request.body {
-            request::Body::GetDeviceInformation(_) => self.get_device_information()?,
-            request::Body::GetNetworkInterfaces(_) => self.get_network_interfaces()?,
-            request::Body::GetNTP(_) => self.get_ntp()?,
-            request::Body::GetSystemDateAndTime(_) => self.get_system_date_and_time()?,
-            request::Body::GetCapabilities(_) => self.get_capabilities()?,
-            request::Body::GetRelayOutputs(_) => self.get_relay_outputs()?,
-            // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?, // Deliberately omitted
-            request::Body::GetServices(_) => self.get_services()?,
+            match request.body {
+                request::Body::GetDeviceInformation(_) => self.get_device_information()?,
+                request::Body::GetNetworkInterfaces(_) => self.get_network_interfaces()?,
+                request::Body::GetNTP(_) => self.get_ntp()?,
+                request::Body::GetSystemDateAndTime(_) => self.get_system_date_and_time()?,
+                request::Body::GetCapabilities(_) => self.get_capabilities()?,
+                request::Body::GetRelayOutputs(_) => self.get_relay_outputs()?,
+                // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?, // Deliberately omitted
+                request::Body::GetServices(_) => self.get_services()?,
 
-            _ => {
-                return Err(ServiceErrorDetail::new(
-                    StatusCode::NOT_IMPLEMENTED,
-                    Some("Service not implemented.".to_string())
-                ));
+                _ => {
+                    return Err(ServiceErrorDetail::new(
+                        StatusCode::NOT_IMPLEMENTED,
+                        Some("Service not implemented.".to_string())
+                    ));
+                }
             }
         };
+
 
         let result = yaserde::ser::to_string(&response)
             .map_err(|ser_err| ServiceErrorDetail::new(StatusCode::INTERNAL_SERVER_ERROR, Some(ser_err)))?;
