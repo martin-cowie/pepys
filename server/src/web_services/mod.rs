@@ -15,9 +15,9 @@ pub struct ServiceErrorDetail {
     detail: Option<String>
 }
 
-const DEVICE_MANAGEMENT_PATH: &str = "/pepys/device_service";
-const IMAGING_MANAGEMENT_PATH: &str = "/pepys/imaging_service";
-const MEDIA_MANAGEMENT_PATH: &str = "/pepys/media_service";
+const DEVICE_MANAGEMENT_PATH: &str = "/onvif/device_service";
+const IMAGING_MANAGEMENT_PATH: &str = "/onvif/imaging_service";
+const MEDIA_MANAGEMENT_PATH: &str = "/onvif/media_service";
 
 //============================================================
 
