@@ -1,0 +1,10 @@
+[package]
+name = "soap-fault"
+version = "0.1.0"
+edition = "2021"
+description = "Serialise and deserialise SOAP fault XML documents"
+
+[dependencies]
+soapenv = { path = "../xsd_rs/soapenv" }
+yaserde.workspace = true
+yaserde_derive.workspace = true

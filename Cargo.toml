@@ -18,7 +18,8 @@ members = [
     "xsd_rs/xop",
 
     "validate",
-    "a12n"
+    "a12n",
+    "soap-fault"
 ]
 exclude = [
     "build_scripts/xml-to-rs"

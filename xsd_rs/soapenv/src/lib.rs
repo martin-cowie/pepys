@@ -104,6 +104,10 @@ pub struct Reasontext {
     #[yaserde(attribute, prefix = "xml", rename = "lang")]
     // pub lang: xml::Lang,
     pub lang: String, //NB: amended by-hand to solve conflict with xml crate
+
+    //NB: Manually added
+    #[yaserde(text)]
+    pub content: String
 }
 
 impl Validate for Reasontext {}
@@ -132,8 +136,9 @@ pub struct Subcode {
     #[yaserde(prefix = "tns", rename = "Value")]
     pub value: String,
 
-    #[yaserde(prefix = "tns", rename = "Subcode")]
-    pub subcode: Vec<Subcode>,
+    //NB: Removed to prevent infinite recursion
+    // #[yaserde(prefix = "tns", rename = "Subcode")]
+    // pub subcode: Vec<Subcode>,
 }
 
 impl Validate for Subcode {}

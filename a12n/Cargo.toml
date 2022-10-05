@@ -1,9 +1,8 @@
-# ONVIF authentication
-
 [package]
 name = "a12n"
 version = "0.1.0"
 edition = "2021"
+description = "ONVIF authentication"
 
 [dependencies]
 base64 = "0.13.0"
