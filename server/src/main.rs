@@ -22,7 +22,7 @@ const WEB_PORT: u16 = 8088;
 async fn main() -> Result<(), Box<dyn Error>>{
     tracing_subscriber::fmt::init();
 
-    let xaddrs = get_urls(WEB_PORT, "pepys/device_service")?; //TODO: duplicate string
+    let xaddrs = get_urls(WEB_PORT, "onvif/device_service")?; //TODO: duplicate string
 
     // The inner layer of request handling machinery
     let web_services = {
@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     // Start the UDP listener
     let ssdp_responder  = tokio::spawn(async move {
-        bind_ws_discovery_responder(&xaddrs.join(", ")).await.expect("Cannot start WS-Discovery listener");
+        bind_ws_discovery_responder(&xaddrs.join(" ")).await.expect("Cannot start WS-Discovery listener");
     });
 
     let (_, _) = (web_server.await?, ssdp_responder.await?);
