@@ -2,18 +2,12 @@ pub(crate) mod devicemgmt;
 pub(crate) mod imaging;
 pub(crate) mod media;
 
-use std::error::Error;
+use soap_fault::SoapFaultCode as Ter;
 use hyper::{Method, StatusCode, body::Buf, Uri};
 
 use self::devicemgmt::DeviceManagmentService;
 use self::imaging::ImagingService;
 use self::media::MediaService;
-
-#[derive(Debug)]
-pub struct ServiceErrorDetail {
-    status: StatusCode,
-    detail: Option<String>
-}
 
 const DEVICE_MANAGEMENT_PATH: &str = "/onvif/device_service";
 const IMAGING_MANAGEMENT_PATH: &str = "/onvif/imaging_service";
@@ -27,61 +21,26 @@ pub(crate) trait ExampleData<T> {
     fn example() -> T;
 }
 
-//===| Common means of communicating errors from service implementations |============
-
-impl ServiceErrorDetail  {
-    pub fn new(status: StatusCode, detail: Option<String>) -> Self {
-        Self {
-            status,
-            detail
-        }
-    }
-
-    pub fn into_response(self) -> hyper::Response<hyper::Body> {
-        let mut response = hyper::Response::new(hyper::Body::from(self.detail.clone().unwrap_or_default()));
-        *response.status_mut() = self.status;
-        response
-    }
-}
-
-impl std::fmt::Display for ServiceErrorDetail {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(detail) = self.detail.as_ref() {
-            write!(f, "{}", detail)
-        } else {
-            write!(f, "Empty")
-        }
-    }
-}
-
-impl Error for ServiceErrorDetail{}
-
 //===| Authentication |=============================================
 
 const PASSWORD: &str = "password123"; //FIXME: obvs
 
-pub(crate) fn authenticate(header: &Option<soapenv::Header>) -> Result<(), ServiceErrorDetail> {
-
-    let auth_lacking = || ServiceErrorDetail::new(
-        StatusCode::FORBIDDEN,
-        Some("Authentication headers are lacking.".to_string())
-    );
+pub(crate) fn authenticate(header: &Option<soapenv::Header>) -> Result<(), Ter> {
 
     let header = match header {
         Some(header) => header,
-        None => return Err(auth_lacking()),
+        None => return Err(Ter::NotAuthorized)
     };
 
     let security = match header.security {
         Some(ref security) => security,
-        None => return Err(auth_lacking()),
+        None => return Err(Ter::NotAuthorized)
     };
 
     if !security.is_password_authentic(PASSWORD) {
-        return Err(ServiceErrorDetail::new(
-            StatusCode::FORBIDDEN,
-            Some("Incorrect password".to_string())
-        ));
+        Err(Ter::NotAuthorized)
+    } else {
+        Ok(())
     }
 
     // FIXME: more compact edition, but was didn't like header being a reference
@@ -95,8 +54,6 @@ pub(crate) fn authenticate(header: &Option<soapenv::Header>) -> Result<(), Servi
     //         ));
     // }
 
-
-    Ok(())
 }
 
 //===| Web Services Controller |====================================
@@ -140,7 +97,7 @@ impl WebServices {
                     Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
                     Err(detail) => {
                         tracing::error!("Cannot handle request: {:?}", &detail);
-                        Ok(detail.into_response())
+                        Ok(detail.into())
                     }
                 }
             }
@@ -154,7 +111,7 @@ impl WebServices {
                     Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
                     Err(detail) => {
                         tracing::error!("Cannot handle request: {:?}", &detail);
-                        Ok(detail.into_response())
+                        Ok(detail.into())
                     }
                 }
             },
@@ -168,7 +125,7 @@ impl WebServices {
                     Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
                     Err(detail) => {
                         tracing::error!("Cannot handle request: {:?}", &detail);
-                        Ok(detail.into_response())
+                        Ok(detail.into())
                     }
                 }
 
@@ -177,9 +134,15 @@ impl WebServices {
             // Return 404 Not Found for all other methods & URIs.
             _ => {
                 let response_content = format!("Unexpected method {} and URI: {}\n", req.method(), req.uri());
+                // let mut response = hyper::Response::new(hyper::Body::from(response_content));
+                // *response.status_mut() = StatusCode::NOT_FOUND;
+                // Ok(response)
 
-                let mut response = hyper::Response::new(hyper::Body::from(response_content));
-                *response.status_mut() = StatusCode::NOT_FOUND;
+                let response = hyper::Response::builder()
+                    .status(StatusCode::NOT_FOUND)
+                    .body(hyper::Body::from(response_content))
+                    .unwrap_or_default();
+
                 Ok(response)
             }
         }

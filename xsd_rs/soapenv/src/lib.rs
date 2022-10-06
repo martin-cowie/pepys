@@ -69,6 +69,11 @@ impl Validate for Body {}
 #[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
 #[yaserde(prefix = "tns", namespace = "tns: http://www.w3.org/2003/05/soap-envelope")]
 pub struct Fault {
+
+    // Added manually - should always be "http://www.w3.org/2003/05/soap-encoding"
+    #[yaserde(prefix = "soap", rename = "encodingStyle", attribute)]
+    pub encoding_style: String,
+
     #[yaserde(prefix = "tns", rename = "Code")]
     pub code: Faultcode,
 

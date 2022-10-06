@@ -7,12 +7,10 @@ use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use network_interface::NetworkInterface;
 use network_interface::NetworkInterfaceConfig;
-use hyper::StatusCode;
-
 
 use crate::rpi;
 use super::ExampleData;
-use super::ServiceErrorDetail;
+use soap_fault::SoapFaultCode as Ter;
 
 static VERSION_MAJOR: i32 = 2;
 static VERSION_MINOR: i32 = 5;
@@ -36,9 +34,9 @@ impl DeviceManagmentService {
         }
     }
 
-    pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, ServiceErrorDetail> {
+    pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, Ter> {
         let request: request::Envelope = yaserde::de::from_reader(payload)
-            .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
+            .map_err(|_| Ter::WellFormed)?;
 
         let response = if let request::Body::GetSystemDateAndTime(_) = request.body {
             // NB: get_system_date_and_time does NOT mandate a password header.
@@ -59,23 +57,20 @@ impl DeviceManagmentService {
                 request::Body::GetServices(_) => self.get_services()?,
 
                 _ => {
-                    return Err(ServiceErrorDetail::new(
-                        StatusCode::NOT_IMPLEMENTED,
-                        Some("Service not implemented.".to_string())
-                    ));
+                    return Err(Ter::ActionNotSupported);
                 }
             }
         };
 
 
         let result = yaserde::ser::to_string(&response)
-            .map_err(|ser_err| ServiceErrorDetail::new(StatusCode::INTERNAL_SERVER_ERROR, Some(ser_err)))?;
+            .map_err(|_| Ter::Action)?;
         Ok(result)
     }
 
     //===| Request Handlers |=======
 
-    fn get_capabilities(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    fn get_capabilities(&self) -> Result<devicemgmt::response::Envelope, Ter> {
         let device = onvif::DeviceCapabilities{
             x_addr: self.service_address.to_string(),
             network: Some(onvif::NetworkCapabilities {
@@ -145,9 +140,9 @@ impl DeviceManagmentService {
 
     }
 
-    fn get_network_interfaces(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    fn get_network_interfaces(&self) -> Result<devicemgmt::response::Envelope, Ter> {
         let network_interfaces = NetworkInterface::show()
-            .map_err(|e| ServiceErrorDetail::new(StatusCode::INTERNAL_SERVER_ERROR, Some(e.to_string())))?;
+            .map_err(|_| Ter::WellFormed)?;
 
         let nic_structs: Vec<onvif::NetworkInterface> = network_interfaces.iter()
             .map(|nic| {
@@ -200,7 +195,7 @@ impl DeviceManagmentService {
         })
     }
 
-    fn get_ntp(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    fn get_ntp(&self) -> Result<devicemgmt::response::Envelope, Ter> {
         Ok(response::Envelope{
             body: response::Body::GetNTPResponse(devicemgmt::GetNTPResponse{
                 ntp_information: onvif::Ntpinformation::example()
@@ -208,7 +203,7 @@ impl DeviceManagmentService {
         })
     }
 
-    fn get_device_information(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    fn get_device_information(&self) -> Result<devicemgmt::response::Envelope, Ter> {
 
         let hardware_info = rpi::RpiProcInfo::new().unwrap_or_default();
 
@@ -224,7 +219,7 @@ impl DeviceManagmentService {
 
     }
 
-    fn get_system_date_and_time(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    fn get_system_date_and_time(&self) -> Result<devicemgmt::response::Envelope, Ter> {
         let utc: DateTime<Utc> = Utc::now();
         let local_time = Local::now();
 
@@ -252,7 +247,7 @@ impl DeviceManagmentService {
         })
 }
 
-    fn get_relay_outputs(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    fn get_relay_outputs(&self) -> Result<devicemgmt::response::Envelope, Ter> {
         Ok(response::Envelope {
             body: response::Body::GetRelayOutputsResponse( devicemgmt::GetRelayOutputsResponse {
                 relay_outputs: vec![onvif::RelayOutput::example()]
@@ -260,7 +255,7 @@ impl DeviceManagmentService {
         })
     }
 
-    fn get_services(&self) -> Result<devicemgmt::response::Envelope, ServiceErrorDetail> {
+    fn get_services(&self) -> Result<devicemgmt::response::Envelope, Ter> {
 
         Ok(response::Envelope {
             body: response::Body::GetServicesResponse(devicemgmt::GetServicesResponse {

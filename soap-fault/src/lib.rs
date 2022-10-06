@@ -1,16 +1,137 @@
+use hyper::header::CONTENT_TYPE;
+use soapenv::{Fault, Faultcode};
 use yaserde_derive::*;
 
-#[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
-#[yaserde(prefix = "soap", namespace = "soap: http://www.w3.org/2003/05/soap-envelope")]
-struct Envelope {
+#[derive(Debug)]
+pub struct FaultDetail {
+    pub faultcode: String,
+    pub subcode: String,
+    pub reason: String
+}
 
+impl FaultDetail {
+    pub fn new(faultcode: &str, subcode: &str, reason: &str) -> Self {
+        Self {
+            faultcode: faultcode.to_string(),
+            subcode: subcode.to_string(),
+            reason: reason.to_string()
+        }
+    }
+}
+
+
+/// From https://www.onvif.org/specs/core/ONVIF-Core-Specification-v261.pdf Table 5
+#[derive(Debug)]
+pub enum SoapFaultCode {
+    VersionMismatch,
+    MustUnderstand,
+    DataEncodingUnknown,
+
+    WellFormed,
+    TagMismatch,
+    Tag,
+    Namespace,
+    MissingAttr,
+    ProhibAttr,
+    InvalidArgs,
+    InvalidArgVal,
+    UnknownAction,
+    OperationProhibited,
+    NotAuthorized,
+
+    ActionNotSupported,
+    Action,
+    OutofMemory,
+    CriticalError
+}
+
+const SENDER: &str = "env:Sender";
+const RECEIVER: &str = "env:Receiver";
+
+//TODO: replace with a static hashmap
+impl From<SoapFaultCode> for FaultDetail {
+    fn from(fault: SoapFaultCode) -> FaultDetail {
+
+        match fault {
+            SoapFaultCode::VersionMismatch => FaultDetail::new("", "env:VersionMismatch", "SOAP version mismatch"),
+            SoapFaultCode::MustUnderstand => FaultDetail::new("", "env:MustUnderstand", "SOAP header blocks not understood"),
+            SoapFaultCode::DataEncodingUnknown => FaultDetail::new("", "env:DataEncodingUnknown", "Unsupported SOAP data encoding"),
+
+            SoapFaultCode::WellFormed => FaultDetail::new(SENDER, "ter:WellFormed", "Well-formed Error"),
+            SoapFaultCode::TagMismatch => FaultDetail::new(SENDER, "ter:TagMismatch", "Tag Mismatch"),
+            SoapFaultCode::Tag => FaultDetail::new(SENDER, "ter:Tag", "No Tag"),
+            SoapFaultCode::Namespace => FaultDetail::new(SENDER, "ter:Namespace", "Namespace Error"),
+            SoapFaultCode::MissingAttr => FaultDetail::new(SENDER, "ter:MissingAttr", "Required Attribute not present"),
+            SoapFaultCode::ProhibAttr => FaultDetail::new(SENDER, "ter:ProhibAttr", "Prohibited Attribute"),
+            SoapFaultCode::InvalidArgs => FaultDetail::new(SENDER, "ter:InvalidArgs", "Invalid Args"),
+            SoapFaultCode::InvalidArgVal => FaultDetail::new(SENDER, "ter:InvalidArgVal", "Argument Value Invalid"),
+            SoapFaultCode::UnknownAction => FaultDetail::new(SENDER, "ter:UnknownAction", "Unknown Action"),
+            SoapFaultCode::OperationProhibited => FaultDetail::new(SENDER, "ter:OperationProhibited", "Operation not Permitted"),
+            SoapFaultCode::NotAuthorized => FaultDetail::new(SENDER, "ter:NotAuthorized", "Sender not Authorized"),
+
+            SoapFaultCode::ActionNotSupported => FaultDetail::new(RECEIVER, "ter:ActionNotSupported", "Optional Action Not Implemented"),
+            SoapFaultCode::Action => FaultDetail::new(RECEIVER, "ter:Action", "Action Failed"),
+            SoapFaultCode::OutofMemory => FaultDetail::new(RECEIVER, "ter:OutofMemory", "Out of Memory"),
+            SoapFaultCode::CriticalError => FaultDetail::new(RECEIVER, "ter:CriticalError", "Critical Error")
+        }
+    }
+
+}
+
+impl From<FaultDetail> for Envelope {
+    fn from(detail: FaultDetail) -> Self {
+        Envelope {
+            body: Body {
+                fault: Fault {
+                    code: Faultcode {
+                        value: soapenv::FaultcodeEnum(detail.faultcode),
+                        subcode: Some(soapenv::Subcode {
+                            value: detail.subcode,
+                        }),
+                    },
+                    reason: soapenv::Faultreason {
+                        text: vec![soapenv::Reasontext {
+                            lang: "en".to_string(),
+                            content: detail.reason
+                        }]
+                    },
+                    node: None,
+                    role: None,
+                    detail: None,
+                    encoding_style: "http://www.w3.org/2003/05/soap-encoding".to_string(),
+                }
+            }
+        }
+    }
+}
+
+impl From<SoapFaultCode> for hyper::Response<hyper::Body> {
+    fn from(ter: SoapFaultCode) -> Self {
+        let detail: FaultDetail = ter.into();
+        let envelope: Envelope = detail.into();
+        let xml = yaserde::ser::to_string(&envelope).unwrap();
+
+        hyper::Response::builder()
+            .header(CONTENT_TYPE, "application/soap+xml; charset=utf-8")
+            .status(hyper::StatusCode::BAD_REQUEST)
+            .body(hyper::Body::from(xml))
+            .unwrap_or_default()
+    }
+}
+
+#[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
+#[yaserde(prefix = "soap",
+    namespace = "soap: http://www.w3.org/2003/05/soap-envelope",
+    namespace = "ter: http://www.onvif.org/ver10/error",
+    namespace = "env: http://www.w3.org/2003/05/soap-envelope"
+)]
+struct Envelope {
     #[yaserde(prefix = "soap", rename = "Body")]
     pub body: Body
 }
 
 #[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]
-#[yaserde(prefix = "soap")
-]
+#[yaserde(prefix = "soap")]
 struct Body {
 
     #[yaserde(prefix = "soap", rename = "Fault")]

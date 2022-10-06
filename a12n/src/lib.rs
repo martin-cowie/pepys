@@ -1,3 +1,5 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
+
 use yaserde_derive::*;
 use sha1::{Sha1, Digest};
 

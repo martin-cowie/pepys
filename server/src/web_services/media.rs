@@ -1,5 +1,4 @@
-use super::ServiceErrorDetail;
-use hyper::StatusCode;
+use soap_fault::SoapFaultCode as Ter;
 
 use media::request;
 use onvif::*;
@@ -18,9 +17,9 @@ impl MediaService {
         }
     }
 
-    pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, ServiceErrorDetail> {
+    pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, Ter> {
         let request: request::Envelope = yaserde::de::from_reader(payload)
-            .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
+            .map_err(|_| Ter::WellFormed)?;
 
         // Check username/password
         super::authenticate(&request.header)?;
@@ -49,23 +48,21 @@ impl MediaService {
 
 
             _ => {
-                return Err(ServiceErrorDetail::new(
-                    StatusCode::NOT_IMPLEMENTED,
-                    Some("Service not implemented.".to_string())
-                ));
+                return Err(Ter::ActionNotSupported);
             }
 
         };
 
         let result = yaserde::ser::to_string(&response)
-            .map_err(|ser_err| ServiceErrorDetail::new(StatusCode::INTERNAL_SERVER_ERROR, Some(ser_err)))?;
+            .map_err(|_| Ter::Action)?;
+
         Ok(result)
     }
 
     //====| Misc |=============================================================
 
 
-    fn get_snapshot_uri(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_snapshot_uri(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetSnapshotUriResponse(media::GetSnapshotUriResponse {
                 media_uri: MediaUri {
@@ -78,7 +75,7 @@ impl MediaService {
         })
     }
 
-    fn get_stream_uri(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_stream_uri(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetStreamUriResponse(media::GetStreamUriResponse {
 
@@ -93,7 +90,7 @@ impl MediaService {
         })
     }
 
-    fn get_audio_encoder_configuration_options(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_audio_encoder_configuration_options(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetAudioEncoderConfigurationOptionsResponse(media::GetAudioEncoderConfigurationOptionsResponse {
                 options: AudioEncoderConfigurationOptions {
@@ -103,7 +100,7 @@ impl MediaService {
         })
     }
 
-    fn get_guaranteed_number_of_video_encoder_instances(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_guaranteed_number_of_video_encoder_instances(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetGuaranteedNumberOfVideoEncoderInstancesResponse(media::GetGuaranteedNumberOfVideoEncoderInstancesResponse {
                 total_number: 1,
@@ -114,7 +111,7 @@ impl MediaService {
         })
     }
 
-    fn get_service_capabilities(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_service_capabilities(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetServiceCapabilitiesResponse(media::GetServiceCapabilitiesResponse {
                 capabilities: Capabilities::example()
@@ -124,7 +121,7 @@ impl MediaService {
 
     //====| Video Encoder Configurations |=====================================
 
-    fn get_video_encoder_configuration(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_video_encoder_configuration(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetVideoEncoderConfigurationResponse(media::GetVideoEncoderConfigurationResponse {
                 configuration: VideoEncoderConfiguration::example()
@@ -132,7 +129,7 @@ impl MediaService {
         })
     }
 
-    fn get_video_encoder_configurations(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_video_encoder_configurations(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetVideoEncoderConfigurationsResponse(media::GetVideoEncoderConfigurationsResponse {
                 configurations: vec![VideoEncoderConfiguration::example()]
@@ -140,7 +137,7 @@ impl MediaService {
         })
     }
 
-    fn get_video_encoder_configuration_options(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_video_encoder_configuration_options(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetVideoEncoderConfigurationOptionsResponse(media::GetVideoEncoderConfigurationOptionsResponse {
                 options: VideoEncoderConfigurationOptions::example()
@@ -148,7 +145,7 @@ impl MediaService {
         })
     }
 
-    fn set_video_encoder_configuration(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn set_video_encoder_configuration(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::SetVideoEncoderConfigurationResponse(media::SetVideoEncoderConfigurationResponse {
                 // Deliberately empty
@@ -158,7 +155,7 @@ impl MediaService {
 
     //====| Profiles |=========================================================
 
-    fn get_profile(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_profile(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
 
         Ok(media::response::Envelope{
             body: media::response::Body::GetProfileResponse(media::GetProfileResponse {
@@ -167,7 +164,7 @@ impl MediaService {
         })
     }
 
-    fn get_profiles(&self) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_profiles(&self) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetProfilesResponse(media::GetProfilesResponse {
                 profiles: vec![Profile::example()],
@@ -175,7 +172,7 @@ impl MediaService {
         })
     }
 
-    fn create_profile(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn create_profile(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::CreateProfileResponse(media::CreateProfileResponse {
                 profile: Profile::example()
@@ -183,7 +180,7 @@ impl MediaService {
         })
     }
 
-    fn delete_profile(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn delete_profile(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::DeleteProfileResponse(media::DeleteProfileResponse {
                 // Deliberately empty
@@ -193,7 +190,7 @@ impl MediaService {
 
     //====| Video Source Configuration |=========================================================
 
-    fn get_video_source_configuration(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_video_source_configuration(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetVideoSourceConfigurationResponse(media::GetVideoSourceConfigurationResponse {
                 configuration: VideoSourceConfiguration::example(),
@@ -202,7 +199,7 @@ impl MediaService {
     }
 
 
-    fn get_video_source_configurations(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, ServiceErrorDetail> {
+    fn get_video_source_configurations(&self, _request: &media::request::Envelope) -> Result<media::response::Envelope, Ter> {
         Ok(media::response::Envelope{
             body: media::response::Body::GetVideoSourceConfigurationsResponse(media::GetVideoSourceConfigurationsResponse {
                 configurations: vec![VideoSourceConfiguration::example()]

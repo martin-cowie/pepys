@@ -25,6 +25,7 @@ imaging = {path = "../wsdl_rs/imaging"}
 media = {path = "../wsdl_rs/media"}
 onvif = { package = "onvif", path = "../xsd_rs/onvif" }
 soapenv = { path = "../xsd_rs/soapenv" }
+soap-fault = {path = "../soap-fault"}
 
 [dev-dependencies]
 tempfile = "3.3.0"

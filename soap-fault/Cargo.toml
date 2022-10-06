@@ -8,3 +8,4 @@ description = "Serialise and deserialise SOAP fault XML documents"
 soapenv = { path = "../xsd_rs/soapenv" }
 yaserde.workspace = true
 yaserde_derive.workspace = true
+hyper.workspace = true

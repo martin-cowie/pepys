@@ -1,6 +1,4 @@
-use super::ServiceErrorDetail;
-use hyper::StatusCode;
-
+use soap_fault::SoapFaultCode as Ter;
 use imaging::{request, response};
 
 
@@ -13,9 +11,9 @@ impl ImagingService {
         Self {}
     }
 
-    pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, ServiceErrorDetail> {
+    pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, Ter> {
         let request: request::Envelope = yaserde::de::from_reader(payload)
-            .map_err(|parse_err| ServiceErrorDetail::new(StatusCode::UNPROCESSABLE_ENTITY, Some(parse_err)))?;
+            .map_err(|_| Ter::WellFormed)?;
 
         // Check username/password
         super::authenticate(&request.header)?;
@@ -25,20 +23,17 @@ impl ImagingService {
             request::Body::GetOptions(_) => self.get_options()?,
 
             _ => {
-                return Err(ServiceErrorDetail::new(
-                    StatusCode::NOT_IMPLEMENTED,
-                    Some("Service not implemented.".to_string())
-                ));
+                return Err(Ter::ActionNotSupported);
             }
 
         };
 
         let result = yaserde::ser::to_string(&response)
-            .map_err(|ser_err| ServiceErrorDetail::new(StatusCode::INTERNAL_SERVER_ERROR, Some(ser_err)))?;
+            .map_err(|_| Ter::Action)?;
         Ok(result)
     }
 
-    fn get_options(&self) -> Result<imaging::response::Envelope, ServiceErrorDetail> {
+    fn get_options(&self) -> Result<imaging::response::Envelope, Ter> {
         Ok(response::Envelope{
             body: imaging::response::Body::GetOptionsResponse(imaging::GetOptionsResponse {
                 imaging_options: onvif::ImagingOptions20::example()
@@ -46,7 +41,7 @@ impl ImagingService {
         })
     }
 
-    fn get_move_options(&self) -> Result<imaging::response::Envelope, ServiceErrorDetail> {
+    fn get_move_options(&self) -> Result<imaging::response::Envelope, Ter> {
         // All 'None' as there is no PTZ implementation
         Ok(response::Envelope {
             body: imaging::response::Body::GetMoveOptionsResponse(imaging::GetMoveOptionsResponse {
