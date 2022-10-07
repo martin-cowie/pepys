@@ -2,6 +2,7 @@ pub(crate) mod devicemgmt;
 pub(crate) mod imaging;
 pub(crate) mod media;
 
+use hyper::header::CONTENT_TYPE;
 use soap_fault::SoapFaultCode as Ter;
 use hyper::{Method, StatusCode, body::Buf, Uri};
 
@@ -64,6 +65,8 @@ pub struct WebServices {
     media_service: MediaService
 }
 
+const TEST_PREVIEW_FILENAME: &str = "/Users/martincowie/tmp/preview.jpg";
+
 impl WebServices {
 
     pub fn new(service_root: &Uri) -> Self {
@@ -87,6 +90,17 @@ impl WebServices {
         let uri_path = req.uri().path().to_string();
 
         match (req.method(), req.uri().path()) {
+
+            (&Method::GET, "/test/preview.jpeg") => {
+                let file_bytes = std::fs::read(TEST_PREVIEW_FILENAME).expect("Cannot load preview");
+
+                let response = hyper::Response::builder()
+                    .header(CONTENT_TYPE, "image/jpeg")
+                    .body(hyper::Body::from(file_bytes))
+                    .unwrap_or_default();
+
+                Ok(response)
+            }
 
             (&Method::POST, IMAGING_MANAGEMENT_PATH) => {
                 let whole_body = hyper::body::to_bytes(req.into_body()).await?;
@@ -134,9 +148,6 @@ impl WebServices {
             // Return 404 Not Found for all other methods & URIs.
             _ => {
                 let response_content = format!("Unexpected method {} and URI: {}\n", req.method(), req.uri());
-                // let mut response = hyper::Response::new(hyper::Body::from(response_content));
-                // *response.status_mut() = StatusCode::NOT_FOUND;
-                // Ok(response)
 
                 let response = hyper::Response::builder()
                     .status(StatusCode::NOT_FOUND)
