@@ -5,7 +5,7 @@ mod rpi;
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr, Ifv6Addr};
 use std::error::Error;
 use std::sync::Arc;
-use tracing::info;
+use tracing::{info, error};
 use ws_discovery_responder::bind_ws_discovery_responder;
 
 use hyper::server::conn::AddrStream;
@@ -45,7 +45,21 @@ async fn main() -> Result<(), Box<dyn Error>>{
                     let web_services = Arc::clone(&web_services);
 
                     async move {
-                        web_services.handle_http_request(req, addr).await
+                        let uri = req.uri().clone();
+                        let response = web_services.handle_http_request(req).await;
+
+                        // Log request URIs next to response status code
+                        if let Ok(ref response) = response {
+                            let status = response.status();
+                            let log_entry = format!("Responding to request for URI {} from {} => {}", uri, addr, status);
+
+                            if status.is_success() || status.is_informational() {
+                                info!("{}", log_entry);
+                            } else {
+                                error!("{}", log_entry);
+                            }
+                        }
+                        response
                     }
                 }))
             }

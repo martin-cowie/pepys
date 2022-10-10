@@ -77,8 +77,6 @@ impl WebServices {
         let snapshot_uri = build_address(service_root, TEST_PREVIEW_PATH);
         let stream_uri = "http://example.com/stream".parse().expect("Cannot parse URL");
 
-        tracing::info!("Preview URL: {}", &snapshot_uri);
-
         Self {
             device_management_service: DeviceManagmentService::new(
                 build_address(service_root, DEVICE_MANAGEMENT_PATH),
@@ -90,10 +88,7 @@ impl WebServices {
         }
     }
 
-    pub async fn handle_http_request(&self, req: hyper::Request<hyper::Body>, origin: std::net::SocketAddr) -> Result<hyper::Response<hyper::Body>, hyper::Error> {
-
-        let uri_path = req.uri().path().to_string();
-
+    pub async fn handle_http_request(&self, req: hyper::Request<hyper::Body>) -> Result<hyper::Response<hyper::Body>, hyper::Error> {
         // TODO: refactor to reduce
         match (req.method(), req.uri().path()) {
             #[cfg(debug_assertions)]
@@ -108,45 +103,32 @@ impl WebServices {
 
             (&Method::POST, IMAGING_MANAGEMENT_PATH) => {
                 let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-                tracing::info!("Responding to {} bytes of request for URI {} from {}", whole_body.len(), uri_path, origin);
 
                 let result = self.imaging_service.process_request(whole_body.reader());
-                    match result {
+                match result {
                     Ok(string) => Ok(build_response(string)),
-                    Err(detail) => {
-                        tracing::error!("Cannot handle request: {:?}", &detail);
-                        Ok(detail.into())
-                    }
+                    Err(detail) => Ok(detail.into())
                 }
             }
 
             (&Method::POST, DEVICE_MANAGEMENT_PATH) => {
                 let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-                tracing::info!("Responding to {} bytes of request for URI {} from {}", whole_body.len(), uri_path, origin);
 
                 let result = self.device_management_service.process_request(whole_body.reader());
                 match result {
                     Ok(string) => Ok(build_response(string)),
-                    Err(detail) => {
-                        tracing::error!("Cannot handle request: {:?}", &detail);
-                        Ok(detail.into())
-                    }
+                    Err(detail) => Ok(detail.into())
                 }
             },
 
             (&Method::POST, MEDIA_MANAGEMENT_PATH) => {
                 let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-                tracing::info!("Responding to {} bytes of request for URI {} from {}", whole_body.len(), uri_path, origin);
 
                 let result = self.media_service.process_request(whole_body.reader());
-                    match result {
+                match result {
                     Ok(string) => Ok(build_response(string)),
-                    Err(detail) => {
-                        tracing::error!("Cannot handle request: {:?}", &detail);
-                        Ok(detail.into())
-                    }
+                    Err(detail) => Ok(detail.into())
                 }
-
             },
 
             // Return 404 Not Found for all other methods & URIs.
