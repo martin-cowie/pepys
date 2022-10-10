@@ -2,17 +2,21 @@
 use strict;
 use warnings;
 use File::Find;
+use FindBin qw($Bin $Script);
 use Term::ANSIColor qw(:constants);
 use XML::Parser;
 
 use XML::XPath;
 use XML::XPath::XMLParser;
 
+print "\$Bin = $Bin\n";
+die "Cannot chdir($Bin)" unless chdir($Bin);
+
 =pod1
 =head1 Web Service Integration Tests
 =cut
 
-use constant VERBOSE => 0;
+use constant VERBOSE => 1;
 
 ### Check the validity of an XML document and its namespaces - xmllint does not.
 sub validate_xml {
