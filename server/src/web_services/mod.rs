@@ -112,7 +112,7 @@ impl WebServices {
 
                 let result = self.imaging_service.process_request(whole_body.reader());
                     match result {
-                    Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
+                    Ok(string) => Ok(build_response(string)),
                     Err(detail) => {
                         tracing::error!("Cannot handle request: {:?}", &detail);
                         Ok(detail.into())
@@ -126,7 +126,7 @@ impl WebServices {
 
                 let result = self.device_management_service.process_request(whole_body.reader());
                 match result {
-                    Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
+                    Ok(string) => Ok(build_response(string)),
                     Err(detail) => {
                         tracing::error!("Cannot handle request: {:?}", &detail);
                         Ok(detail.into())
@@ -140,7 +140,7 @@ impl WebServices {
 
                 let result = self.media_service.process_request(whole_body.reader());
                     match result {
-                    Ok(string) => Ok(hyper::Response::new(hyper::Body::from(string))),
+                    Ok(string) => Ok(build_response(string)),
                     Err(detail) => {
                         tracing::error!("Cannot handle request: {:?}", &detail);
                         Ok(detail.into())
@@ -167,6 +167,7 @@ impl WebServices {
 
 //===| Support functions |=======
 
+/// Build a Uri comprising the root of `root` and a path of `path`.
 fn build_address(root: &Uri, path: &str) -> Uri {
     let parts = root.clone().into_parts();
 
@@ -177,4 +178,13 @@ fn build_address(root: &Uri, path: &str) -> Uri {
         .path_and_query(path)
         .build()
         .expect("Cannot deconstruct service root")
+}
+
+
+/// Compose and set headers for an XML response
+fn build_response(xml_str: String) -> hyper::Response<hyper::Body> {
+    hyper::Response::builder()
+        .header(CONTENT_TYPE, "application/soap+xml")
+        .body(hyper::Body::from(xml_str))
+        .unwrap_or_default()
 }
