@@ -2,7 +2,6 @@ pub(crate) mod devicemgmt;
 pub(crate) mod imaging;
 pub(crate) mod media;
 
-use hyper::header::CONTENT_TYPE;
 use soap_fault::SoapFaultCode as Ter;
 use hyper::{Method, StatusCode, body::Buf, Uri};
 
@@ -10,9 +9,15 @@ use self::devicemgmt::DeviceManagmentService;
 use self::imaging::ImagingService;
 use self::media::MediaService;
 
+#[cfg(debug_assertions)]
+use hyper::header::CONTENT_TYPE;
+#[cfg(debug_assertions)]
+use std::include_bytes;
+
 const DEVICE_MANAGEMENT_PATH: &str = "/onvif/device_service";
 const IMAGING_MANAGEMENT_PATH: &str = "/onvif/imaging_service";
 const MEDIA_MANAGEMENT_PATH: &str = "/onvif/media_service";
+const TEST_PREVIEW_PATH: &str = "/test/preview.jpeg";
 
 //============================================================
 
@@ -65,20 +70,20 @@ pub struct WebServices {
     media_service: MediaService
 }
 
-const TEST_PREVIEW_FILENAME: &str = "/Users/martincowie/tmp/preview.jpg";
-
 impl WebServices {
 
     pub fn new(service_root: &Uri) -> Self {
 
-        let snapshot_uri = "http://example.com/snapshot".parse().expect("Cannot parse URL");
+        let snapshot_uri = build_address(service_root, TEST_PREVIEW_PATH);
         let stream_uri = "http://example.com/stream".parse().expect("Cannot parse URL");
 
+        tracing::info!("Preview URL: {}", &snapshot_uri);
+
         Self {
-            device_management_service: DeviceManagmentService::new(service_root,
-                DEVICE_MANAGEMENT_PATH,
-                IMAGING_MANAGEMENT_PATH,
-                MEDIA_MANAGEMENT_PATH
+            device_management_service: DeviceManagmentService::new(
+                build_address(service_root, DEVICE_MANAGEMENT_PATH),
+                build_address(service_root, IMAGING_MANAGEMENT_PATH),
+                build_address(service_root, MEDIA_MANAGEMENT_PATH)
             ),
             imaging_service: ImagingService::new(),
             media_service: MediaService::new(snapshot_uri, stream_uri)
@@ -89,16 +94,15 @@ impl WebServices {
 
         let uri_path = req.uri().path().to_string();
 
+        // TODO: refactor to reduce
         match (req.method(), req.uri().path()) {
-
-            (&Method::GET, "/test/preview.jpeg") => {
-                let file_bytes = std::fs::read(TEST_PREVIEW_FILENAME).expect("Cannot load preview");
-
+            #[cfg(debug_assertions)]
+            (&Method::GET, TEST_PREVIEW_PATH) => {
+                let file_bytes = include_bytes!("preview.jpeg").to_vec();
                 let response = hyper::Response::builder()
                     .header(CONTENT_TYPE, "image/jpeg")
                     .body(hyper::Body::from(file_bytes))
                     .unwrap_or_default();
-
                 Ok(response)
             }
 
@@ -159,4 +163,18 @@ impl WebServices {
         }
     }
 
+}
+
+//===| Support functions |=======
+
+fn build_address(root: &Uri, path: &str) -> Uri {
+    let parts = root.clone().into_parts();
+
+    // TODO: better means of constructing one URI from another
+    Uri::builder()
+        .scheme(parts.scheme.expect("Cannot handle missing scheme"))
+        .authority(parts.authority.expect("Cannot handle missing authority"))
+        .path_and_query(path)
+        .build()
+        .expect("Cannot deconstruct service root")
 }

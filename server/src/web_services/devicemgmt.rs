@@ -24,13 +24,12 @@ pub struct DeviceManagmentService {
 
 impl DeviceManagmentService {
 
-    pub fn new(service_root: &Uri, path: &str, imaging_path: &str, media_path: &str) -> Self {
+    pub fn new(service_address: Uri, imaging_address: Uri, media_address: Uri) -> Self {
 
         Self {
-            service_address: build_address(service_root, path),
-
-            imaging_address: build_address(service_root, imaging_path),
-            media_address: build_address(service_root, media_path),
+            service_address,
+            imaging_address,
+            media_address
         }
     }
 
@@ -324,18 +323,6 @@ impl ExampleData<onvif::RelayOutput> for onvif::RelayOutput {
 
 
 //===| Support functions |=======
-
-fn build_address(root: &Uri, path: &str) -> Uri {
-    let parts = root.clone().into_parts();
-
-    // TODO: better means of constructing one URI from another
-    Uri::builder()
-        .scheme(parts.scheme.expect("Cannot handle missing scheme"))
-        .authority(parts.authority.expect("Cannot handle missing authority"))
-        .path_and_query(path)
-        .build()
-        .expect("Cannot deconstruct service root")
-}
 
 fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
     onvif::DateTime{
