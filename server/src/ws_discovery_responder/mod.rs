@@ -4,7 +4,7 @@ mod probe_response;
 use static_init::dynamic;
 use std::{error::Error, net::{SocketAddr, Ipv4Addr, IpAddr}};
 use tokio::net::UdpSocket;
-use tracing::{info, debug};
+use tracing::{info, debug, error};
 use uuid::Uuid;
 
 use crate::ws_discovery_responder::probe::Envelope;
@@ -27,7 +27,7 @@ const ADDRESSING_ROLE_ANON: &str = "http://schemas.xmlsoap.org/ws/2004/08/addres
 #[dynamic]
 static SCOPES: Vec<&'static str> = vec![
     "onvif://www.onvif.org/type/video_encoder",
-    "onvif://www.onvif.org/hardware/Pi%20Cam",
+    "onvif://www.onvif.org/hardware/Pepys",
     "onvif://www.onvif.org/name/Pepys",
     "onvif://www.onvif.org/location/"
 ];
@@ -47,17 +47,27 @@ pub async fn bind_ws_discovery_responder(xaddr: &str) -> Result<(), Box<dyn Erro
     loop {
         let (len, sender_addr) = listening_socket.recv_from(&mut buf).await?;
         let received_message = String::from_utf8_lossy(&buf[..len]).to_string();
-        let probe: Envelope = yaserde::de::from_str(&received_message)?;
 
-        if probe.header.action == WS_DISCOVERY_PROBE {
-            debug!("Received probe from {}: {:#?}", sender_addr, probe);
-            let response = build_response(&probe, xaddr);
-            let response_str = yaserde::ser::to_string(&build_response(&probe, xaddr))?;
-            let response_bytes = response_str.as_bytes();
-            listening_socket.send_to(response_bytes, sender_addr).await?;
-            debug!("Sent {} bytes to {}: {:#?}", response_bytes.len(), sender_addr, response);
+        //TODO: handle parse failures - "IP Cams" sends XML with unbound prefixes.
+
+        match yaserde::de::from_str::<Envelope>(&received_message) {
+            Err(detail) => {
+                error!("Cannot parse XML probe from {}: {}", sender_addr, detail);
+            }
+
+            Ok(probe) => {
+                if probe.header.action == WS_DISCOVERY_PROBE {
+                    debug!("Received probe from {}: {:#?}", sender_addr, probe);
+                    let response = build_response(&probe, xaddr);
+                    let response_str = yaserde::ser::to_string(&build_response(&probe, xaddr))?;
+                    let response_bytes = response_str.as_bytes();
+                    listening_socket.send_to(response_bytes, sender_addr).await?;
+                    debug!("Sent {} bytes to {}: {:#?}", response_bytes.len(), sender_addr, response);
+                }
+            }
         }
-    }
+
+     }
 }
 
 /**
