@@ -13,89 +13,172 @@ pub struct Envelope {
 }
 
 #[derive(Debug, YaSerialize, YaDeserialize)]
-#[yaserde(prefix = "s",namespace = "s: http://www.w3.org/2003/05/soap-envelope",)]
-#[yaserde(prefix = "trt", namespace = "trt: http://www.onvif.org/ver10/media/wsdl")]
+#[yaserde(
+    prefix = "s",
+    namespace = "s: http://www.w3.org/2003/05/soap-envelope",
+    namespace = "trt: http://www.onvif.org/ver10/media/wsdl",
+    namespace = "tds: http://www.onvif.org/ver10/device/wsdl"
+)]
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 
+    #[yaserde(prefix = "tds")]
     AddAudioDecoderConfigurationResponse(super::AddAudioDecoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	AddAudioEncoderConfigurationResponse(super::AddAudioEncoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	AddAudioOutputConfigurationResponse(super::AddAudioOutputConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	AddAudioSourceConfigurationResponse(super::AddAudioSourceConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	AddMetadataConfigurationResponse(super::AddMetadataConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	AddPTZConfigurationResponse(super::AddPTZConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	AddVideoAnalyticsConfigurationResponse(super::AddVideoAnalyticsConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	AddVideoEncoderConfigurationResponse(super::AddVideoEncoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	AddVideoSourceConfigurationResponse(super::AddVideoSourceConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	CreateOSDResponse(super::CreateOSDResponse),
+    #[yaserde(prefix = "tds")]
 	CreateProfileResponse(super::CreateProfileResponse),
+    #[yaserde(prefix = "tds")]
 	DeleteOSDResponse(super::DeleteOSDResponse),
+    #[yaserde(prefix = "tds")]
 	DeleteProfileResponse(super::DeleteProfileResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioDecoderConfigurationOptionsResponse(super::GetAudioDecoderConfigurationOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioDecoderConfigurationResponse(super::GetAudioDecoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioDecoderConfigurationsResponse(super::GetAudioDecoderConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioEncoderConfigurationOptionsResponse(super::GetAudioEncoderConfigurationOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioEncoderConfigurationResponse(super::GetAudioEncoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioEncoderConfigurationsResponse(super::GetAudioEncoderConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioOutputConfigurationOptionsResponse(super::GetAudioOutputConfigurationOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioOutputConfigurationResponse(super::GetAudioOutputConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioOutputConfigurationsResponse(super::GetAudioOutputConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioOutputsResponse(super::GetAudioOutputsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioSourceConfigurationOptionsResponse(super::GetAudioSourceConfigurationOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioSourceConfigurationResponse(super::GetAudioSourceConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioSourceConfigurationsResponse(super::GetAudioSourceConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetAudioSourcesResponse(super::GetAudioSourcesResponse),
+    #[yaserde(prefix = "tds")]
 	GetCompatibleAudioDecoderConfigurationsResponse(super::GetCompatibleAudioDecoderConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetCompatibleAudioEncoderConfigurationsResponse(super::GetCompatibleAudioEncoderConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetCompatibleAudioOutputConfigurationsResponse(super::GetCompatibleAudioOutputConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetCompatibleAudioSourceConfigurationsResponse(super::GetCompatibleAudioSourceConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetCompatibleMetadataConfigurationsResponse(super::GetCompatibleMetadataConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetCompatibleVideoAnalyticsConfigurationsResponse(super::GetCompatibleVideoAnalyticsConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetCompatibleVideoEncoderConfigurationsResponse(super::GetCompatibleVideoEncoderConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetCompatibleVideoSourceConfigurationsResponse(super::GetCompatibleVideoSourceConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetGuaranteedNumberOfVideoEncoderInstancesResponse(super::GetGuaranteedNumberOfVideoEncoderInstancesResponse),
+    #[yaserde(prefix = "tds")]
 	GetMetadataConfigurationOptionsResponse(super::GetMetadataConfigurationOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetMetadataConfigurationResponse(super::GetMetadataConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	GetMetadataConfigurationsResponse(super::GetMetadataConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetOSDOptionsResponse(super::GetOSDOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetOSDResponse(super::GetOSDResponse),
+    #[yaserde(prefix = "tds")]
 	GetOSDsResponse(super::GetOSDsResponse),
+    #[yaserde(prefix = "tds")]
 	GetProfileResponse(super::GetProfileResponse),
+    #[yaserde(prefix = "tds")]
 	GetProfilesResponse(super::GetProfilesResponse),
+    #[yaserde(prefix = "tds")]
 	GetServiceCapabilitiesResponse(super::GetServiceCapabilitiesResponse),
+    #[yaserde(prefix = "tds")]
     GetSnapshotUriResponse(super::GetSnapshotUriResponse),
+    #[yaserde(prefix = "tds")]
 	GetStreamUriResponse(super::GetStreamUriResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoAnalyticsConfigurationResponse(super::GetVideoAnalyticsConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoAnalyticsConfigurationsResponse(super::GetVideoAnalyticsConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoEncoderConfigurationOptionsResponse(super::GetVideoEncoderConfigurationOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoEncoderConfigurationResponse(super::GetVideoEncoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoEncoderConfigurationsResponse(super::GetVideoEncoderConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoSourceConfigurationOptionsResponse(super::GetVideoSourceConfigurationOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoSourceConfigurationResponse(super::GetVideoSourceConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoSourceConfigurationsResponse(super::GetVideoSourceConfigurationsResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoSourceModesResponse(super::GetVideoSourceModesResponse),
+    #[yaserde(prefix = "tds")]
 	GetVideoSourcesResponse(super::GetVideoSourcesResponse),
+    #[yaserde(prefix = "tds")]
 	RemoveAudioDecoderConfigurationResponse(super::RemoveAudioDecoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	RemoveAudioEncoderConfigurationResponse(super::RemoveAudioEncoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	RemoveAudioOutputConfigurationResponse(super::RemoveAudioOutputConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	RemoveAudioSourceConfigurationResponse(super::RemoveAudioSourceConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	RemoveMetadataConfigurationResponse(super::RemoveMetadataConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	RemovePTZConfigurationResponse(super::RemovePTZConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	RemoveVideoAnalyticsConfigurationResponse(super::RemoveVideoAnalyticsConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	RemoveVideoEncoderConfigurationResponse(super::RemoveVideoEncoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	RemoveVideoSourceConfigurationResponse(super::RemoveVideoSourceConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetAudioDecoderConfigurationResponse(super::SetAudioDecoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetAudioEncoderConfigurationResponse(super::SetAudioEncoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetAudioOutputConfigurationResponse(super::SetAudioOutputConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetAudioSourceConfigurationResponse(super::SetAudioSourceConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetMetadataConfigurationResponse(super::SetMetadataConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetOSDResponse(super::SetOSDResponse),
+    #[yaserde(prefix = "tds")]
 	SetSynchronizationPointResponse(super::SetSynchronizationPointResponse),
+    #[yaserde(prefix = "tds")]
 	SetVideoAnalyticsConfigurationResponse(super::SetVideoAnalyticsConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetVideoEncoderConfigurationResponse(super::SetVideoEncoderConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetVideoSourceConfigurationResponse(super::SetVideoSourceConfigurationResponse),
+    #[yaserde(prefix = "tds")]
 	SetVideoSourceModeResponse(super::SetVideoSourceModeResponse),
+    #[yaserde(prefix = "tds")]
 	StartMulticastStreamingResponse(super::StartMulticastStreamingResponse),
+    #[yaserde(prefix = "tds")]
 	StopMulticastStreamingResponse(super::StopMulticastStreamingResponse)
 }
 

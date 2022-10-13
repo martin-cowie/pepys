@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 media = {path = "../../wsdl_rs/media"}
+devicemgmt = {path = "../../wsdl_rs/devicemgmt/"}
 onvif = {path = "../../xsd_rs/onvif"}
 
 yaserde = "0.7.1"

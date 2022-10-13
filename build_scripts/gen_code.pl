@@ -83,11 +83,12 @@ pub struct Envelope {
 #[yaserde(
     prefix = "s",
     namespace = "s: http://www.w3.org/2003/05/soap-envelope",
+    namespace = "tds: http://www.onvif.org/ver10/device/wsdl"
 )]
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 
-    ${\( join(",\n\t", map {"$_(super::$_)"} @responses) )}
+    ${\( join(",\n\t", map {"#[yaserde(prefix = \"tds\")]\n\t$_(super::$_)"} @responses) )}
 }
 
 impl Default for Body {

@@ -137,6 +137,8 @@ impl DeviceManagmentService {
                 }
         })})
 
+        // Ok(response::Envelope { body: response::Body::GetCapabilitiesResponse(devicemgmt::GetCapabilitiesResponse::example()) })
+
     }
 
     fn get_network_interfaces(&self) -> Result<devicemgmt::response::Envelope, Ter> {
@@ -291,6 +293,7 @@ impl DeviceManagmentService {
             })
         })
 
+
     }
 
 }
@@ -353,25 +356,4 @@ fn v4_netmask_width(netmask: network_interface::Netmask<Ipv4Addr>) -> i32 {
     } else {
         0
     }
-}
-
-
-#[cfg(test)]
-mod test {
-
-    use network_interface::NetworkInterface;
-    use network_interface::NetworkInterfaceConfig;
-
-    #[test]
-    fn test_crate() {
-        let network_interfaces = NetworkInterface::show().unwrap();
-
-        for itf in network_interfaces.iter() {
-
-
-            println!("{:#?}", itf);
-
-        }
-    }
-
 }

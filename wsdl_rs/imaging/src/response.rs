@@ -13,17 +13,28 @@ pub struct Envelope {
 }
 
 #[derive(Debug, YaSerialize, YaDeserialize)]
-#[yaserde( prefix = "s", namespace = "s: http://www.w3.org/2003/05/soap-envelope")]
-#[yaserde(prefix = "timg", namespace = "timg: http://www.onvif.org/ver20/imaging/wsdl")]
+#[yaserde(
+    prefix = "s",
+    namespace = "s: http://www.w3.org/2003/05/soap-envelope",
+    namespace = "timg: http://www.onvif.org/ver20/imaging/wsdl",
+    namespace = "tds: http://www.onvif.org/ver10/device/wsdl"
+)]
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 
+    #[yaserde(prefix = "tds")]
     GetImagingSettingsResponse(super::GetImagingSettingsResponse),
+    #[yaserde(prefix = "tds")]
 	GetMoveOptionsResponse(super::GetMoveOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetOptionsResponse(super::GetOptionsResponse),
+    #[yaserde(prefix = "tds")]
 	GetStatusResponse(super::GetStatusResponse),
+    #[yaserde(prefix = "tds")]
 	MoveResponse(super::MoveResponse),
+    #[yaserde(prefix = "tds")]
 	SetImagingSettingsResponse(super::SetImagingSettingsResponse),
+    #[yaserde(prefix = "tds")]
 	StopResponse(super::StopResponse)
 }
 

@@ -20,11 +20,12 @@ pub struct Envelope {
 #[yaserde(
     prefix = "s",
     namespace = "s: http://www.w3.org/2003/05/soap-envelope",
+    namespace = "tds: http://www.onvif.org/ver10/device/wsdl"
 )]
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 
-        #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "tds")]
     GetImagingSettings(super::GetImagingSettings),
 
     #[yaserde(prefix = "tds")]
