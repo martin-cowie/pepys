@@ -22,19 +22,19 @@ pub struct Envelope {
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 
-    #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "timg")]
     GetImagingSettingsResponse(super::GetImagingSettingsResponse),
-    #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "timg")]
 	GetMoveOptionsResponse(super::GetMoveOptionsResponse),
-    #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "timg")]
 	GetOptionsResponse(super::GetOptionsResponse),
-    #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "timg")]
 	GetStatusResponse(super::GetStatusResponse),
-    #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "timg")]
 	MoveResponse(super::MoveResponse),
-    #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "timg")]
 	SetImagingSettingsResponse(super::SetImagingSettingsResponse),
-    #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "timg")]
 	StopResponse(super::StopResponse)
 }
 
