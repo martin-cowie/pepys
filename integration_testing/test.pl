@@ -16,7 +16,7 @@ die "Cannot chdir($Bin)" unless chdir($Bin);
 =head1 Web Service Integration Tests
 =cut
 
-use constant VERBOSE => 1;
+use constant VERBOSE => $ENV{'VERBOSE'} || 0;
 
 ### Check the validity of an XML document and its namespaces - xmllint does not.
 sub validate_xml {
