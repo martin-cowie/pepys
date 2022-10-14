@@ -9,7 +9,6 @@ use XML::Parser;
 use XML::XPath;
 use XML::XPath::XMLParser;
 
-print "\$Bin = $Bin\n";
 die "Cannot chdir($Bin)" unless chdir($Bin);
 
 =pod1
@@ -17,6 +16,7 @@ die "Cannot chdir($Bin)" unless chdir($Bin);
 =cut
 
 use constant VERBOSE => $ENV{'VERBOSE'} || 0;
+use constant SOAP_NS => "http://www.w3.org/2003/05/soap-envelope";
 
 ### Check the validity of an XML document and its namespaces - xmllint does not.
 sub validate_xml {
@@ -27,21 +27,42 @@ sub validate_xml {
         $parser->parse($xml_source);
         return 1;
     };
-
     return 0 if ($@);
     return 1;
+}
+
+### Validates the namespace bound to the element within the Body - return 1 if valid, 0 otherwise.
+sub validate_namespace {
+    my ($xml_source, $expectedNamespace) = @_;
+
+    my $xp = XML::XPath->new(xml => $xml_source);
+    $xp->set_namespace("s", SOAP_NS);
+    my $nodes = $xp->find("/s:Envelope/s:Body/*[1]");
+    my $node = $nodes->pop();
+    my $prefix = $node->getPrefix();
+    my $namespaceURI = $node->getNamespace($prefix)->getExpanded();
+
+    return $namespaceURI eq $expectedNamespace;
 }
 
 sub consider {
     my ($filename, $dir) = ($File::Find::name, $File::Find::dir);
 
+    # Expected response namespaces
+    my %namespaces = (
+        "onvif/device_service" => "http://www.onvif.org/ver10/device/wsdl",
+        "onvif/imaging_service" => "http://www.onvif.org/ver20/imaging/wsdl",
+        "onvif/media_service" => "http://www.onvif.org/ver10/media/wsdl",
+    );
+
     if ($filename =~ /(.*)\.xml$/) {
+        my $expectedNamespace = $namespaces{$dir};
         my $url = "http://localhost:8088/$dir";
         my ($rc, $output, $command) = postFile($url, $filename);
 
         if ($rc != 0) {
             print STDERR RED, "FAILED: $url $filename - $output\n", RESET;
-        } elsif (!validate_xml($output)) {
+        } elsif (!validate_xml($output) || !validate_namespace($output, $expectedNamespace)) {
             print STDERR RED, "FAILED: $url $filename - Invalid XML response\n", RESET;
         } else {
             print STDERR BOLD, "PASSED:", RESET, " $url $filename\n"
@@ -128,7 +149,7 @@ sub getFaultSubCode {
 
     my $xpath = "/s:Envelope/s:Body/s:Fault/s:Code/s:Subcode/s:Value/text()";
     my $xp = XML::XPath->new(xml => $xml);
-    $xp->set_namespace("s", "http://www.w3.org/2003/05/soap-envelope");
+    $xp->set_namespace("s", SOAP_NS);
     my $nodeset = $xp->find($xpath);
     return $nodeset->string_value();
 }
