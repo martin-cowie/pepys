@@ -1,6 +1,7 @@
 mod ws_discovery_responder;
 mod web_services;
 mod rpi;
+mod camera;
 
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr, Ifv6Addr};
 use std::error::Error;
@@ -17,6 +18,7 @@ use std::convert::Infallible;
 
 //TODO: Take this from configuration
 const WEB_PORT: u16 = 8088;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{

@@ -4,20 +4,17 @@ pub(crate) mod media;
 
 use soap_fault::SoapFaultCode as Ter;
 use hyper::{Method, StatusCode, body::Buf, Uri};
+use hyper::header::CONTENT_TYPE;
 
 use self::devicemgmt::DeviceManagmentService;
 use self::imaging::ImagingService;
 use self::media::MediaService;
-
-#[cfg(debug_assertions)]
-use hyper::header::CONTENT_TYPE;
-#[cfg(debug_assertions)]
-use std::include_bytes;
+use super::camera::{TestCameraAdapter, CameraAdapter};
 
 const DEVICE_MANAGEMENT_PATH: &str = "/onvif/device_service";
 const IMAGING_MANAGEMENT_PATH: &str = "/onvif/imaging_service";
 const MEDIA_MANAGEMENT_PATH: &str = "/onvif/media_service";
-const TEST_PREVIEW_PATH: &str = "/test/preview.jpeg";
+const CAMERA_PREVIEW_PATH: &str = "/camera/preview";
 
 //============================================================
 
@@ -67,15 +64,18 @@ pub(crate) fn authenticate(header: &Option<soapenv::Header>) -> Result<(), Ter> 
 pub struct WebServices {
     device_management_service: DeviceManagmentService,
     imaging_service: ImagingService,
-    media_service: MediaService
+    media_service: MediaService,
+    camera_adapter: TestCameraAdapter //TODO: replace with reference to a trait object
 }
 
 impl WebServices {
 
+    /// Services are made available at, or relative to `service_root`.
+    ///
     pub fn new(service_root: &Uri) -> Self {
 
-        let snapshot_uri = build_address(service_root, TEST_PREVIEW_PATH);
-        let stream_uri = "http://example.com/stream".parse().expect("Cannot parse URL");
+        let snapshot_uri = build_address(service_root, CAMERA_PREVIEW_PATH);
+        let camera_adapter = TestCameraAdapter::new();
 
         Self {
             device_management_service: DeviceManagmentService::new(
@@ -84,18 +84,20 @@ impl WebServices {
                 build_address(service_root, MEDIA_MANAGEMENT_PATH)
             ),
             imaging_service: ImagingService::new(),
-            media_service: MediaService::new(snapshot_uri, stream_uri)
+            media_service: MediaService::new(snapshot_uri, camera_adapter.get_camera_streams()[0].clone()),
+            camera_adapter
         }
     }
 
     pub async fn handle_http_request(&self, req: hyper::Request<hyper::Body>) -> Result<hyper::Response<hyper::Body>, hyper::Error> {
         // TODO: refactor to reduce
         match (req.method(), req.uri().path()) {
-            #[cfg(debug_assertions)]
-            (&Method::GET, TEST_PREVIEW_PATH) => {
-                let file_bytes = include_bytes!("preview.jpeg").to_vec();
+
+            (&Method::GET, CAMERA_PREVIEW_PATH) => {
+                let (file_bytes, mime_type) = self.camera_adapter.get_preview();
+
                 let response = hyper::Response::builder()
-                    .header(CONTENT_TYPE, "image/jpeg")
+                    .header(CONTENT_TYPE, mime_type)
                     .body(hyper::Body::from(file_bytes))
                     .unwrap_or_default();
                 Ok(response)
