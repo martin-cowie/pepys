@@ -26,11 +26,11 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     let xaddrs = get_urls(WEB_PORT, "onvif/device_service")?; //TODO: duplicate string
 
-    // The inner layer of request handling machinery
-    let web_services = {
+    let web_services: &'static web_services::WebServices = {
         let service_root: Uri = xaddrs[0].parse().expect("Cannot parse root URI");
-        Arc::new(web_services::WebServices::new(&service_root))
+        Box::leak(Box::new(web_services::WebServices::new(&service_root)))
     };
+
 
     // Create and start the 'Hyper' web server
     let web_server = {
@@ -38,13 +38,12 @@ async fn main() -> Result<(), Box<dyn Error>>{
         // Build the outer layer of request handling machinery
         let service_maker = make_service_fn(move |conn: &AddrStream|{
             let addr = conn.remote_addr();
-            let web_services = Arc::clone(&web_services);
+            // let web_services = Arc::clone(&web_services);
             tracing::debug!("Making service for {}", &addr);
 
             async move {
                 Ok::<_, Infallible>(service_fn(move |req| {
                     tracing::debug!("Service closure running for {}", &addr);
-                    let web_services = Arc::clone(&web_services);
 
                     async move {
                         let uri = req.uri().clone();
@@ -86,11 +85,11 @@ async fn main() -> Result<(), Box<dyn Error>>{
 fn get_urls(port_number: u16, suffix: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let urls: Vec<String> = get_if_addrs()?
         .into_iter()
-        .filter(|nic| !nic.is_loopback())
+        .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)))
         .map(|nic|
             match nic.addr {
                 IfAddr::V4(Ifv4Addr{ip, ..}) => format!("http://{}:{}/{}", ip, port_number, suffix),
-                IfAddr::V6(Ifv6Addr{ip, ..}) => format!("http://{}:{}/{}", ip, port_number, suffix),
+                _ => panic!("Unexpected IP address version")
             }
         )
         .collect();

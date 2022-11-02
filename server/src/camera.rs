@@ -59,7 +59,7 @@ fn get_stream_uris() -> Vec<Uri> {
         .map(|nic|
             match nic.addr {
                 IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/{}", ip, suffix),
-                IfAddr::V6(Ifv6Addr{ip, ..}) => format!("rtsp://{}/{}", ip, suffix), //FIXME: redundant
+                _ => panic!("Unexpected IP address version")
             }
         )
         .map(|str| {
