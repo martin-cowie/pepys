@@ -1,20 +1,22 @@
 use tracing::info;
 use hyper::Uri;
 
-pub trait CameraAdapter {
+pub trait CameraAdapter: Send + Sync { // Extra traits so it can be shared with > 1 thread
     fn get_preview(&self) -> (Vec<u8>, String);
     fn get_camera_streams(&self) -> Vec<Uri>; //Uri does not handle RTSP URIs
 }
 
 //====| Test Implementation |=======================================
 use std::process::{Command, Child};
-use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr, Ifv6Addr};
+use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 
 const TEST_STREAM_URI: &str = "rtsp://192.168.59.27/sample.mkv";
 const RTSP_SERVER: &str = "live555MediaServer";
 
 pub struct TestCameraAdapter {
-    rtsp_server_process: Child,
+    #[allow(dead_code)]
+    rtsp_server_process: Child, //TODO: listen and log to output from this, and listen for unexpected process death
+
     stream_uris: Vec<Uri>,
 }
 
@@ -25,7 +27,7 @@ impl TestCameraAdapter {
     pub fn new() -> Self {
         info!("Build a TestCameraAdapter exposing RTSP stream at {}", TEST_STREAM_URI);
 
-        let suffix = "sample.mkv";
+        // let suffix = "sample.mkv";
         let stream_uris = get_stream_uris();
 
         let child = Command::new(RTSP_SERVER).spawn().expect("Cannot start RTSP server");
@@ -52,13 +54,12 @@ impl CameraAdapter for TestCameraAdapter {
 }
 
 fn get_stream_uris() -> Vec<Uri> {
-    let suffix = "h264";
     let result: Vec<Uri> = get_if_addrs().expect("Cannot get NICs")
         .into_iter()
         .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)) )
         .map(|nic|
             match nic.addr {
-                IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/{}", ip, suffix),
+                IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/h264", ip),
                 _ => panic!("Unexpected IP address version")
             }
         )

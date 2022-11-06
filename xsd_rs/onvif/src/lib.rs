@@ -3124,6 +3124,7 @@ impl Validate for Dot11Configuration {}
 #[derive(Default, PartialEq, Debug, UtilsTupleIo, UtilsDefaultSerde)]
 pub struct Dot11SSIDType (pub String);
 
+#[allow(clippy::len_zero)]
 impl Validate for Dot11SSIDType {
     fn validate(&self) -> Result<(), String> {
         if self.0.len() < 1 {

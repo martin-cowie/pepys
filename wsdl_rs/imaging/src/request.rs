@@ -22,6 +22,8 @@ pub struct Envelope {
     namespace = "s: http://www.w3.org/2003/05/soap-envelope",
     namespace = "tds: http://www.onvif.org/ver10/device/wsdl"
 )]
+
+#[allow(clippy::large_enum_variant)]
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 

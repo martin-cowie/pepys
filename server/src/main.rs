@@ -3,9 +3,8 @@ mod web_services;
 mod rpi;
 mod camera;
 
-use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr, Ifv6Addr};
+use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 use std::error::Error;
-use std::sync::Arc;
 use tracing::{info, error};
 use ws_discovery_responder::bind_ws_discovery_responder;
 
@@ -38,7 +37,6 @@ async fn main() -> Result<(), Box<dyn Error>>{
         // Build the outer layer of request handling machinery
         let service_maker = make_service_fn(move |conn: &AddrStream|{
             let addr = conn.remote_addr();
-            // let web_services = Arc::clone(&web_services);
             tracing::debug!("Making service for {}", &addr);
 
             async move {

@@ -65,7 +65,7 @@ pub struct WebServices {
     device_management_service: DeviceManagmentService,
     imaging_service: ImagingService,
     media_service: MediaService,
-    camera_adapter: TestCameraAdapter //TODO: replace with reference to a trait object
+    camera_adapter: &'static dyn CameraAdapter //TODO: replace with reference to a trait object
 }
 
 impl WebServices {
@@ -75,7 +75,7 @@ impl WebServices {
     pub fn new(service_root: &Uri) -> Self {
 
         let snapshot_uri = build_address(service_root, CAMERA_PREVIEW_PATH);
-        let camera_adapter = TestCameraAdapter::new();
+        let camera_adapter: &'static dyn CameraAdapter = Box::leak(Box::new(TestCameraAdapter::new()));
 
         Self {
             device_management_service: DeviceManagmentService::new(
