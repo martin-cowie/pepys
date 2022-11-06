@@ -5,6 +5,7 @@ members = [
     "wsdl_rs/devicemgmt",
     "wsdl_rs/imaging",
     "wsdl_rs/media",
+    "wsdl_rs/event",
 
     "xsd_rs/onvif",
 

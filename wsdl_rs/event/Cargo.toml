@@ -1,0 +1,17 @@
+[package]
+name = "event"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+onvif = { package = "onvif", path = "../../xsd_rs/onvif" }
+soapenv = { path = "../../xsd_rs/soapenv" }
+validate = { path = "../../validate" }
+b2 = {path = "../../xsd_rs/b2"}
+ws_addr = {path = "../../xsd_rs/ws_addr"}
+t1 = {path = "../../xsd_rs/t1/"}
+
+yaserde.workspace = true
+yaserde_derive.workspace = true
+xsd-types.workspace =true
