@@ -59,7 +59,7 @@ fn get_stream_uris() -> Vec<Uri> {
         .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)) )
         .map(|nic|
             match nic.addr {
-                IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/h264", ip),
+                IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/sample.mkv", ip),
                 _ => panic!("Unexpected IP address version")
             }
         )
