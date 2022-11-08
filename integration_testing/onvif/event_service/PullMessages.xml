@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsnt="http://docs.oasis-open.org/wsn/b-2">
+	<s:Header>
+		<a:Action s:mustUnderstand="1">http://www.onvif.org/ver10/events/wsdl/PullPointSubscription/PullMessagesRequest</a:Action>
+		<a:MessageID>urn:uuid:cdc532df-40ca-4750-bafb-4ffbaa9a30f1</a:MessageID>
+		<a:ReplyTo>
+			<a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address>
+		</a:ReplyTo>
+		<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+			<wsse:UsernameToken>
+				<wsse:Username>admin</wsse:Username>
+				<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">b2P1t8YK+7aQ9fMPIz21HcatonA=</wsse:Password>
+				<wsse:Nonce>hMnBoUd1uQg2+BEbxstl9A==</wsse:Nonce>
+				<wsu:Created>2022-11-07T14:16:04Z</wsu:Created>
+			</wsse:UsernameToken>
+		</wsse:Security>
+		<a:To s:mustUnderstand="1">http://192.168.59.5:8000/onvif/PullSubManager?Idx=00_0</a:To>
+	</s:Header>
+	<s:Body xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+		<PullMessages xmlns="http://www.onvif.org/ver10/events/wsdl">
+			<Timeout>PT2S</Timeout>
+			<MessageLimit>8</MessageLimit>
+		</PullMessages>
+	</s:Body>
+</s:Envelope>

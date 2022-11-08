@@ -11,6 +11,9 @@ use b2 as wsnt;
 use ws_addr as wsa;
 use t1 as wstop;
 
+pub mod request;
+pub mod response;
+
 
 // Generated from event.xsd hereon ---------------------------------
 

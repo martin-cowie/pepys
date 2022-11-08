@@ -17,19 +17,20 @@ static VERSION_MINOR: i32 = 5;
 
 pub struct DeviceManagmentService {
     service_address: Uri,
-
     imaging_address: Uri,
-    media_address: Uri
+    media_address: Uri,
+    events_address: Uri
 }
 
 impl DeviceManagmentService {
 
-    pub fn new(service_address: Uri, imaging_address: Uri, media_address: Uri) -> Self {
+    pub fn new(service_address: Uri, imaging_address: Uri, media_address: Uri, events_address: Uri) -> Self {
 
         Self {
             service_address,
             imaging_address,
-            media_address
+            media_address,
+            events_address
         }
     }
 
@@ -124,12 +125,19 @@ impl DeviceManagmentService {
             extension: None,
         };
 
+        let events = onvif::EventCapabilities {
+            x_addr: self.events_address.to_string(),
+            ws_subscription_policy_support: false,
+            ws_pull_point_support: false,
+            ws_pausable_subscription_manager_interface_support: false
+        };
+
         Ok(response::Envelope{
             body: response::Body::GetCapabilitiesResponse(devicemgmt::GetCapabilitiesResponse {
                 capabilities: onvif::Capabilities {
                     analytics: vec![],
                     device: vec![device],
-                    events: vec![],
+                    events: vec![events],
                     imaging: vec![imaging],
                     media: vec![media],
                     ptz: vec![],
@@ -283,6 +291,16 @@ impl DeviceManagmentService {
                     devicemgmt::Service {
                         namespace: "http://www.onvif.org/ver10/media/wsdl".to_string(),
                         x_addr: self.media_address.to_string(),
+                        capabilities: None,
+                        version: onvif::OnvifVersion{
+                            major: VERSION_MAJOR,
+                            minor: VERSION_MINOR
+                        }
+                    },
+
+                    devicemgmt::Service {
+                        namespace: "http://www.onvif.org/ver10/events/wsdl".to_string(),
+                        x_addr: self.events_address.to_string(),
                         capabilities: None,
                         version: onvif::OnvifVersion{
                             major: VERSION_MAJOR,

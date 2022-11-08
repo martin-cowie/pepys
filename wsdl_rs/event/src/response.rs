@@ -16,31 +16,33 @@ pub struct Envelope {
 #[yaserde(
     prefix = "s",
     namespace = "s: http://www.w3.org/2003/05/soap-envelope",
-    namespace = "tds: http://www.onvif.org/ver10/device/wsdl"
+    namespace = "tds: http://www.onvif.org/ver10/device/wsdl",
+    namespace = "tev: http://www.onvif.org/ver10/events/wsdl",
+    namespace = "wsnt: http://docs.oasis-open.org/wsn/b-2"
 )]
 pub enum Body {
     Unknown, // Requirement of `Default` impl, required by YaDeserialize
 
-    #[yaserde(prefix = "tds")]
+    #[yaserde(prefix = "tev")]
 	AddEventBrokerResponse(super::AddEventBrokerResponse),
-	#[yaserde(prefix = "tds")]
+	#[yaserde(prefix = "tev")]
 	CreatePullPointSubscriptionResponse(super::CreatePullPointSubscriptionResponse),
-	#[yaserde(prefix = "tds")]
+	#[yaserde(prefix = "tev")]
 	DeleteEventBrokerResponse(super::DeleteEventBrokerResponse),
-	#[yaserde(prefix = "tds")]
+	#[yaserde(prefix = "tev")]
 	GetEventBrokersResponse(super::GetEventBrokersResponse),
-	#[yaserde(prefix = "tds")]
+	#[yaserde(prefix = "tev")]
 	GetEventPropertiesResponse(super::GetEventPropertiesResponse),
-	#[yaserde(prefix = "tds")]
+	#[yaserde(prefix = "tev")]
 	GetServiceCapabilitiesResponse(super::GetServiceCapabilitiesResponse),
-	#[yaserde(prefix = "tds")]
+	#[yaserde(prefix = "tev")]
 	PullMessagesResponse(super::PullMessagesResponse),
-	#[yaserde(prefix = "tds")]
+	#[yaserde(prefix = "tev")]
 	SeekResponse(super::SeekResponse),
-	#[yaserde(prefix = "tds")]
+	#[yaserde(prefix = "tev")]
 	SetSynchronizationPointResponse(super::SetSynchronizationPointResponse),
-	#[yaserde(prefix = "tds")]
-	UnsubscribeResponse(super::UnsubscribeResponse)
+	// #[yaserde(prefix = "tev")]
+	// UnsubscribeResponse(super::UnsubscribeResponse) -- TODO: why is this struct definition absent?
 }
 
 impl Default for Body {
@@ -48,4 +50,3 @@ impl Default for Body {
         Body::Unknown
     }
 }
-

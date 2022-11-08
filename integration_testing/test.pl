@@ -53,17 +53,22 @@ sub consider {
         "onvif/device_service" => "http://www.onvif.org/ver10/device/wsdl",
         "onvif/imaging_service" => "http://www.onvif.org/ver20/imaging/wsdl",
         "onvif/media_service" => "http://www.onvif.org/ver10/media/wsdl",
+        "onvif/event_service" => "http://www.onvif.org/ver10/events/wsdl"
     );
 
     if ($filename =~ /(.*)\.xml$/) {
         my $expectedNamespace = $namespaces{$dir};
+        die "Unknown namespace for unexpected directory $dir" unless ($expectedNamespace);
+
         my $url = "http://localhost:8088/$dir";
         my ($rc, $output, $command) = postFile($url, $filename);
 
         if ($rc != 0) {
             print STDERR RED, "FAILED: $url $filename - $output\n", RESET;
-        } elsif (!validate_xml($output) || !validate_namespace($output, $expectedNamespace)) {
+        } elsif (!validate_xml($output) ) {
             print STDERR RED, "FAILED: $url $filename - Invalid XML response\n", RESET;
+        } elsif (!validate_namespace($output, $expectedNamespace)) {
+            print STDERR RED, "FAILED: $url $filename - Invalid XML response namespace: $expectedNamespace\n", RESET;
         } else {
             print STDERR BOLD, "PASSED:", RESET, " $url $filename\n"
         }

@@ -51,8 +51,8 @@ pub enum Body {
     #[yaserde(prefix = "tds")]
     SetSynchronizationPoint(super::SetSynchronizationPoint),
 
-    #[yaserde(prefix = "tds")]
-    Unsubscribe(super::Unsubscribe)
+    // #[yaserde(prefix = "tds")]
+    // Unsubscribe(super::Unsubscribe) -- TODO: why is this struct definition absent?
 }
 
 impl Default for Body {

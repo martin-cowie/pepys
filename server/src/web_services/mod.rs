@@ -1,6 +1,7 @@
 pub(crate) mod devicemgmt;
 pub(crate) mod imaging;
 pub(crate) mod media;
+pub(crate) mod events;
 
 use soap_fault::SoapFaultCode as Ter;
 use hyper::{Method, StatusCode, body::Buf, Uri};
@@ -9,11 +10,13 @@ use hyper::header::CONTENT_TYPE;
 use self::devicemgmt::DeviceManagmentService;
 use self::imaging::ImagingService;
 use self::media::MediaService;
+use self::events::EventsService;
 use super::camera::{TestCameraAdapter, CameraAdapter};
 
 const DEVICE_MANAGEMENT_PATH: &str = "/onvif/device_service";
 const IMAGING_MANAGEMENT_PATH: &str = "/onvif/imaging_service";
 const MEDIA_MANAGEMENT_PATH: &str = "/onvif/media_service";
+const EVENTS_MANAGEMENT_PATH: &str = "/onvif/event_service";
 const CAMERA_PREVIEW_PATH: &str = "/camera/preview";
 
 //============================================================
@@ -65,6 +68,7 @@ pub struct WebServices {
     device_management_service: DeviceManagmentService,
     imaging_service: ImagingService,
     media_service: MediaService,
+    events_service: EventsService,
     camera_adapter: &'static dyn CameraAdapter //TODO: replace with reference to a trait object
 }
 
@@ -81,10 +85,12 @@ impl WebServices {
             device_management_service: DeviceManagmentService::new(
                 build_address(service_root, DEVICE_MANAGEMENT_PATH),
                 build_address(service_root, IMAGING_MANAGEMENT_PATH),
-                build_address(service_root, MEDIA_MANAGEMENT_PATH)
+                build_address(service_root, MEDIA_MANAGEMENT_PATH),
+                build_address(service_root, EVENTS_MANAGEMENT_PATH)
             ),
             imaging_service: ImagingService::new(),
             media_service: MediaService::new(snapshot_uri, camera_adapter.get_camera_streams()[0].clone()),
+            events_service: EventsService::new(),
             camera_adapter
         }
     }
@@ -131,6 +137,17 @@ impl WebServices {
                     Ok(string) => Ok(build_response(string)),
                     Err(detail) => Ok(detail.into())
                 }
+            },
+
+            (&Method::POST, EVENTS_MANAGEMENT_PATH) => {
+                let whole_body = hyper::body::to_bytes(req.into_body()).await?;
+
+                let result = self.events_service.process_request(whole_body.reader());
+                match result {
+                    Ok(string) => Ok(build_response(string)),
+                    Err(detail) => Ok(detail.into())
+                }
+
             },
 
             // Return 404 Not Found for all other methods & URIs.

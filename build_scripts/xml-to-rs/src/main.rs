@@ -4,7 +4,7 @@ use std::io;
 fn main() {
 
     //TODO: Allow selection of the envelope type.
-    let envelope: devicemgmt::response::Envelope = yaserde::de::from_reader(io::stdin())
+    let envelope: event::response::Envelope = yaserde::de::from_reader(io::stdin())
         .expect("Cannot parse input");
 
     println!("{:#?}", envelope);
