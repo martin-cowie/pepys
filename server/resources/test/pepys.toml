@@ -1,0 +1,4 @@
+# Example Pepys configuration
+port = 1234
+username = "some_user"
+password = "some_password"

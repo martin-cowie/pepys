@@ -9,6 +9,7 @@ use network_interface::NetworkInterface;
 use network_interface::NetworkInterfaceConfig;
 
 use crate::rpi;
+use super::Authenticator;
 use super::ExampleData;
 use soap_fault::SoapFaultCode as Ter;
 
@@ -19,18 +20,20 @@ pub struct DeviceManagmentService {
     service_address: Uri,
     imaging_address: Uri,
     media_address: Uri,
-    events_address: Uri
+    events_address: Uri,
+    authenticator: &'static Authenticator
 }
 
 impl DeviceManagmentService {
 
-    pub fn new(service_address: Uri, imaging_address: Uri, media_address: Uri, events_address: Uri) -> Self {
+    pub fn new(service_address: Uri, imaging_address: Uri, media_address: Uri, events_address: Uri, authenticator: &'static Authenticator) -> Self {
 
         Self {
             service_address,
             imaging_address,
             media_address,
-            events_address
+            events_address,
+            authenticator
         }
     }
 
@@ -44,7 +47,7 @@ impl DeviceManagmentService {
         } else {
 
             // Check username/password
-            super::authenticate(&request.header)?;
+            self.authenticator.authenticate(&request.header)?;
 
             match request.body {
                 request::Body::GetDeviceInformation(_) => self.get_device_information()?,

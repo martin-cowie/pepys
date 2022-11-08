@@ -29,38 +29,54 @@ pub(crate) trait ExampleData<T> {
 
 //===| Authentication |=============================================
 
-const PASSWORD: &str = "password123"; //FIXME: obvs
+pub struct Authenticator {
+    username: String,
+    password: String
+}
 
-pub(crate) fn authenticate(header: &Option<soapenv::Header>) -> Result<(), Ter> {
+impl Authenticator {
 
-    let header = match header {
-        Some(header) => header,
-        None => return Err(Ter::NotAuthorized)
-    };
-
-    let security = match header.security {
-        Some(ref security) => security,
-        None => return Err(Ter::NotAuthorized)
-    };
-
-    if !security.is_password_authentic(PASSWORD) {
-        Err(Ter::NotAuthorized)
-    } else {
-        Ok(())
+    pub fn new(username: &str, password: &str) -> Self {
+        Self {
+            username: username.to_string(),
+            password: password.to_string()
+        }
     }
 
-    // FIXME: more compact edition, but was didn't like header being a reference
-    //
-    // if !header.ok_or_else(auth_lacking)?
-    //     .security.ok_or_else(auth_lacking)?
-    //     .is_password_authentic(PASSWORD) {
-    //         return Err(ServiceErrorDetail::new(
-    //             StatusCode::FORBIDDEN,
-    //             Some("Incorrect password".to_string())
-    //         ));
-    // }
+    pub fn authenticate(&self, header: &Option<soapenv::Header>) -> Result<(), Ter> {
+
+        let header = match header {
+            Some(header) => header,
+            None => return Err(Ter::NotAuthorized)
+        };
+
+        let security = match header.security {
+            Some(ref security) => security,
+            None => return Err(Ter::NotAuthorized)
+        };
+
+        if !security.is_password_authentic(&self.password) || security.username_token.username != self.username {
+            Err(Ter::NotAuthorized)
+        } else {
+            Ok(())
+        }
+
+        // FIXME: more compact edition, but was didn't like header being a reference
+        //
+        // if !header.ok_or_else(auth_lacking)?
+        //     .security.ok_or_else(auth_lacking)?
+        //     .is_password_authentic(PASSWORD) {
+        //         return Err(ServiceErrorDetail::new(
+        //             StatusCode::FORBIDDEN,
+        //             Some("Incorrect password".to_string())
+        //         ));
+        // }
+
+    }
+
 
 }
+
 
 //===| Web Services Controller |====================================
 
@@ -76,7 +92,7 @@ impl WebServices {
 
     /// Services are made available at, or relative to `service_root`.
     ///
-    pub fn new(service_root: &Uri) -> Self {
+    pub fn new(service_root: &Uri, authenticator: &'static Authenticator) -> Self {
 
         let snapshot_uri = build_address(service_root, CAMERA_PREVIEW_PATH);
         let camera_adapter: &'static dyn CameraAdapter = Box::leak(Box::new(TestCameraAdapter::new()));
@@ -86,11 +102,12 @@ impl WebServices {
                 build_address(service_root, DEVICE_MANAGEMENT_PATH),
                 build_address(service_root, IMAGING_MANAGEMENT_PATH),
                 build_address(service_root, MEDIA_MANAGEMENT_PATH),
-                build_address(service_root, EVENTS_MANAGEMENT_PATH)
+                build_address(service_root, EVENTS_MANAGEMENT_PATH),
+                authenticator
             ),
-            imaging_service: ImagingService::new(),
-            media_service: MediaService::new(snapshot_uri, camera_adapter.get_camera_streams()[0].clone()),
-            events_service: EventsService::new(),
+            imaging_service: ImagingService::new(authenticator),
+            media_service: MediaService::new(snapshot_uri, camera_adapter.get_camera_streams()[0].clone(), authenticator),
+            events_service: EventsService::new(authenticator),
             camera_adapter
         }
     }

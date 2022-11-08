@@ -10,7 +10,6 @@ pub trait CameraAdapter: Send + Sync { // Extra traits so it can be shared with 
 use std::process::{Command, Child};
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 
-const TEST_STREAM_URI: &str = "rtsp://192.168.59.27/sample.mkv";
 const RTSP_SERVER: &str = "live555MediaServer";
 
 pub struct TestCameraAdapter {
@@ -25,8 +24,6 @@ pub struct TestCameraAdapter {
 //TODO: replace hardcoded IP address
 impl TestCameraAdapter {
     pub fn new() -> Self {
-        info!("Build a TestCameraAdapter exposing RTSP stream at {}", TEST_STREAM_URI);
-
         // let suffix = "sample.mkv";
         let stream_uris = get_stream_uris();
 
@@ -64,7 +61,6 @@ fn get_stream_uris() -> Vec<Uri> {
             }
         )
         .map(|str| {
-            dbg!(&str);
             str.parse().expect("Cannot parse RTSP URI")
         })
         .collect();

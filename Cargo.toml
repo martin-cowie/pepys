@@ -49,7 +49,9 @@ xsd-macro-utils = { git = "https://github.com/lumeohq/xsd-parser-rs", rev = "7f3
 xsd-types = { git = "https://github.com/lumeohq/xsd-parser-rs",  rev = "7f3d433" } # TODO: get a specific revision
 yaserde = "0.7.1" # TODO: bring this upto date - Specific version required by xsd-types
 yaserde_derive = "0.7.1"
-
+serde = "1.0.147"
+serde_derive = "1.0.147"
+toml = "0.5.9"
 
 
 [profile.release]

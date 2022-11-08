@@ -2,8 +2,10 @@ mod ws_discovery_responder;
 mod web_services;
 mod rpi;
 mod camera;
+mod config;
 
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
+use web_services::Authenticator;
 use std::error::Error;
 use tracing::{info, error};
 use ws_discovery_responder::bind_ws_discovery_responder;
@@ -14,20 +16,33 @@ use hyper::Server;
 use hyper::Uri;
 
 use std::convert::Infallible;
-
-//TODO: Take this from configuration
-const WEB_PORT: u16 = 8088;
-
+use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
     tracing_subscriber::fmt::init();
 
-    let xaddrs = get_urls(WEB_PORT, "onvif/device_service")?; //TODO: duplicate string
+    let config: &'static config::Config = Box::leak(Box::new({
+        let args: Vec<String> = env::args().collect();
+        let config_name = args.get(1);
+        if let Some(config_name) = config_name {
+            let result = config::Config::load(config_name)?;
+            info!("Applied configuration from {}", config_name);
+            result
+        } else {
+            let result = config::Config::default();
+            info!("Applied default configuration");
+            result
+        }
+    }));
+
+    let authenticator: &'static Authenticator = Box::leak(Box::new(Authenticator::new(&config.username, &config.password)));
+
+    let xaddrs = get_urls(config.port , "onvif/device_service")?; //TODO: duplicate string
 
     let web_services: &'static web_services::WebServices = {
         let service_root: Uri = xaddrs[0].parse().expect("Cannot parse root URI");
-        Box::leak(Box::new(web_services::WebServices::new(&service_root)))
+        Box::leak(Box::new(web_services::WebServices::new(&service_root, authenticator)))
     };
 
 
@@ -63,7 +78,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
                 }))
             }
         });
-        let addr = ([0, 0, 0, 0], WEB_PORT).into();
+        let addr = ([0, 0, 0, 0], config.port).into();
         Server::bind(&addr).serve(service_maker)
     };
     info!("Started HTTP server bound at {:?}", xaddrs);

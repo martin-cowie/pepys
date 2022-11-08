@@ -3,17 +3,20 @@ use soap_fault::SoapFaultCode as Ter;
 use media::request;
 use onvif::*;
 use xsd_types::types::Duration;
+use super::Authenticator;
 
 pub struct MediaService {
     snapshot_uri: hyper::Uri,
-    stream_uri: hyper::Uri
+    stream_uri: hyper::Uri,
+    authenticator: &'static Authenticator
 }
 
 impl MediaService {
-    pub fn new(snapshot_uri: hyper::Uri, stream_uri: hyper::Uri) -> Self {
+    pub fn new(snapshot_uri: hyper::Uri, stream_uri: hyper::Uri, authenticator: &'static Authenticator) -> Self {
         Self {
             snapshot_uri,
-            stream_uri
+            stream_uri,
+            authenticator
         }
     }
 
@@ -22,7 +25,7 @@ impl MediaService {
             .map_err(|_| Ter::WellFormed)?;
 
         // Check username/password
-        super::authenticate(&request.header)?;
+        self.authenticator.authenticate(&request.header)?;
 
         let response  = match request.body {
             media::request::Body::CreateProfile(_) => self.create_profile(&request)?,

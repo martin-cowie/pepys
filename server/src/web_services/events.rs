@@ -2,11 +2,18 @@ use soap_fault::SoapFaultCode as Ter;
 use event::{request, response};
 use super::ExampleData;
 use ws_addr as wsa;
-pub struct EventsService {}
+use super::Authenticator;
+
+pub struct EventsService {
+    #[allow(dead_code)] //FIXME: use this
+    authenticator: &'static Authenticator
+}
 
 impl EventsService {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(authenticator: &'static Authenticator) -> Self {
+        Self {
+            authenticator
+        }
     }
 
     pub fn process_request(&self, payload: impl std::io::Read) -> Result<String, Ter> {
@@ -14,7 +21,7 @@ impl EventsService {
             .map_err(|_| Ter::WellFormed)?;
 
         // Check username/password
-        // super::authenticate(&request.header)?; -- TODO: Surveillance Station is not authenticating.
+        // self.authenticator.authenticate(&request.header)?; -- TODO: Surveillance Station is not authenticating.
 
         let response = match request.body {
 
