@@ -206,3 +206,57 @@ fn build_response(xml_str: String) -> hyper::Response<hyper::Body> {
         .body(hyper::Body::from(xml_str))
         .unwrap_or_default()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const HEADER_XML: &str = r#"
+        <s:Header xmlns:s="http://www.w3.org/2003/05/soap-envelope">
+            <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                <wsse:UsernameToken>
+                    <wsse:Username>admin</wsse:Username>
+                    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">EtlHJ118V0QMXkhNpjr9bRpV1Dw=</wsse:Password>
+                    <wsse:Nonce>cHbYsxuwBrfZVszTghKwPg==</wsse:Nonce>
+                    <wsu:Created>2022-03-07T13:19:39Z</wsu:Created>
+                </wsse:UsernameToken>
+            </wsse:Security>
+        </s:Header>"#;
+
+
+    #[test]
+    pub fn test_authentication_ok() {
+        let header: soapenv::Header = yaserde::de::from_str(HEADER_XML).unwrap();
+
+        let auth = Authenticator::new("admin", "password123");
+        let result = auth.authenticate(&Some(header));
+        assert!(matches!(result, Ok(_)));
+    }
+
+    #[test]
+    pub fn test_authentication_bad_password() {
+        let header: soapenv::Header = yaserde::de::from_str(HEADER_XML).unwrap();
+
+        let auth = Authenticator::new("admin", "not_the_password");
+        let result = auth.authenticate(&Some(header));
+        assert!(matches!(result, Err(_)));
+    }
+
+    #[test]
+    pub fn test_authentication_bad_user() {
+        let header: soapenv::Header = yaserde::de::from_str(HEADER_XML).unwrap();
+
+        let auth = Authenticator::new("not-a-user-name", "password123");
+        let result = auth.authenticate(&Some(header));
+        assert!(matches!(result, Err(_)));
+    }
+
+    #[test]
+    pub fn test_authentication_no_header() {
+        let auth = Authenticator::new("not-a-user-name", "password123");
+        let result = auth.authenticate(&None);
+        assert!(matches!(result, Err(_)));
+    }
+
+
+}
