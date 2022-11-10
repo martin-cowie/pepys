@@ -61,17 +61,6 @@ impl Authenticator {
             Ok(())
         }
 
-        // FIXME: more compact edition, but was didn't like header being a reference
-        //
-        // if !header.ok_or_else(auth_lacking)?
-        //     .security.ok_or_else(auth_lacking)?
-        //     .is_password_authentic(PASSWORD) {
-        //         return Err(ServiceErrorDetail::new(
-        //             StatusCode::FORBIDDEN,
-        //             Some("Incorrect password".to_string())
-        //         ));
-        // }
-
     }
 
 

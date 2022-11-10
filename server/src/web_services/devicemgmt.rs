@@ -1,6 +1,7 @@
 use chrono::prelude::*;
 use devicemgmt::request;
 use devicemgmt::response;
+use get_if_addrs::{Interface, IfAddr, get_if_addrs};
 use hyper::Uri;
 use onvif::Ntpinformation;
 use std::net::Ipv4Addr;
@@ -21,7 +22,8 @@ pub struct DeviceManagmentService {
     imaging_address: Uri,
     media_address: Uri,
     events_address: Uri,
-    authenticator: &'static Authenticator
+    authenticator: &'static Authenticator,
+    has_ip_v6: bool
 }
 
 impl DeviceManagmentService {
@@ -33,7 +35,8 @@ impl DeviceManagmentService {
             imaging_address,
             media_address,
             events_address,
-            authenticator
+            authenticator,
+            has_ip_v6: Self::get_has_ip_v6(get_if_addrs().expect("Cannot get NICs"))
         }
     }
 
@@ -56,7 +59,7 @@ impl DeviceManagmentService {
                 request::Body::GetSystemDateAndTime(_) => self.get_system_date_and_time()?,
                 request::Body::GetCapabilities(_) => self.get_capabilities()?,
                 request::Body::GetRelayOutputs(_) => self.get_relay_outputs()?,
-                // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?, // Deliberately omitted
+                // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?, //FIXME Deliberately omitted - but why?
                 request::Body::GetServices(_) => self.get_services()?,
 
                 _ => {
@@ -71,6 +74,17 @@ impl DeviceManagmentService {
         Ok(result)
     }
 
+    fn get_has_ip_v6(nics: Vec<Interface>) -> bool {
+        let nic = nics
+            .into_iter()
+            .find(|nic| matches!(nic.addr, IfAddr::V6(_)) );
+
+        match nic {
+            Some(_) => true,
+            None => false,
+        }
+    }
+
     //===| Request Handlers |=======
 
     fn get_capabilities(&self) -> Result<devicemgmt::response::Envelope, Ter> {
@@ -78,8 +92,8 @@ impl DeviceManagmentService {
             x_addr: self.service_address.to_string(),
             network: Some(onvif::NetworkCapabilities {
                 ip_filter: Some(false),
-                zero_configuration: Some(false),  //TODO: get from config
-                ip_version_6: Some(true), //FIXME - only true if have ipv6 NICs
+                zero_configuration: Some(false),
+                ip_version_6: Some(self.has_ip_v6),
                 dyn_dns: Some(false),
                 extension: None }),
             system: Some(onvif::SystemCapabilities{
@@ -91,7 +105,7 @@ impl DeviceManagmentService {
                 firmware_upgrade: false,
                 supported_versions: vec![onvif::OnvifVersion{
                     major: VERSION_MAJOR,
-                    minor: VERSION_MINOR }], //TODO: Get from config
+                    minor: VERSION_MINOR }],
                 extension: None }),
             io: Some(onvif::Iocapabilities{
                 input_connectors: Some(0),
@@ -376,5 +390,28 @@ fn v4_netmask_width(netmask: network_interface::Netmask<Ipv4Addr>) -> i32 {
         netmask.octets().iter().map(|x| *x as i32).sum()
     } else {
         0
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use get_if_addrs::Ifv6Addr;
+
+    #[test]
+    pub fn test_has_ip_v6_true() {
+        let ip_v6_nic: Interface = Interface{ //TODO: Mock this
+            name: "test-nic".to_string(),
+            addr: IfAddr::V6(Ifv6Addr{
+                ip: Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1),
+                netmask: Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1),
+                broadcast: None })
+        };
+
+        let no_v6_nics = vec![];
+        let with_v6_nics = vec![ip_v6_nic];
+
+        assert_eq!(true, DeviceManagmentService::get_has_ip_v6(with_v6_nics));
+        assert_eq!(false, DeviceManagmentService::get_has_ip_v6(no_v6_nics));
     }
 }

@@ -21,7 +21,6 @@ pub struct TestCameraAdapter {
 
 //TODO: error out if the child process dies
 //TODO: capture and log stdout
-//TODO: replace hardcoded IP address
 impl TestCameraAdapter {
     pub fn new() -> Self {
         // let suffix = "sample.mkv";
