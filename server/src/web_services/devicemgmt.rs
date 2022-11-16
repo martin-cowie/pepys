@@ -75,14 +75,9 @@ impl DeviceManagmentService {
     }
 
     fn get_has_ip_v6(nics: Vec<Interface>) -> bool {
-        let nic = nics
+        nics
             .into_iter()
-            .find(|nic| matches!(nic.addr, IfAddr::V6(_)) );
-
-        match nic {
-            Some(_) => true,
-            None => false,
-        }
+            .any(|nic| matches!(nic.addr, IfAddr::V6(_)) )
     }
 
     //===| Request Handlers |=======

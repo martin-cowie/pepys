@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
         let config_name = args.get(1);
         if let Some(config_name) = config_name {
             let result = config::Config::load(config_name)
-                .map_err(|err| format!("Cannot load {}: {}", &config_name, err.to_string()))?;
+                .map_err(|err| format!("Cannot load {}: {}", &config_name, err))?;
             info!("Applied configuration from {}", config_name);
             result
         } else {
