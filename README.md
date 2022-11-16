@@ -3,7 +3,7 @@ An ONVIF server for the Raspberry Pi Camera. Pronounced 'peeps'.
 
 ## Requirements
 
-### Test Camdera Adapter
+### Test Camera Adapter
 
 * The Live555rtsp server. 
 
