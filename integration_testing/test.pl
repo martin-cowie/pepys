@@ -17,6 +17,9 @@ die "Cannot chdir($Bin)" unless chdir($Bin);
 
 use constant VERBOSE => $ENV{'VERBOSE'} || 0;
 use constant SOAP_NS => "http://www.w3.org/2003/05/soap-envelope";
+use constant DEVICE_SERVICE => "http://localhost:8088/onvif/device_service";
+use constant MEDIA_SERVICE => "http://localhost:8088/onvif/media_service";
+
 
 ### Check the validity of an XML document and its namespaces - xmllint does not.
 sub validate_xml {
@@ -87,65 +90,93 @@ sub testServices {
 
 # Test that both positive and negative authentication work
 sub testAuthentication {
-    my $url = "http://localhost:8088/onvif/device_service";
     my $filename = "lacking_authentication.xml";
-    my ($rc, $output, $command) = postFile($url, $filename);
+    my ($rc, $output, $command) = postFile(DEVICE_SERVICE, $filename);
     if ($rc == 0) {
-        print STDERR RED, "FAILED: $url $filename - $output\n", RESET;
+        print STDERR RED, "FAILED: ${\DEVICE_SERVICE} $filename - $output\n", RESET;
         return;
     }
 
     # Parse and assert on XML content returned
     my $subCode = getFaultSubCode($output);
     if ($subCode eq "ter:NotAuthorized") {
-        print STDERR BOLD, "PASSED:", RESET, " $url $filename\n"
+        print STDERR BOLD, "PASSED:", RESET, " ${\DEVICE_SERVICE} $filename\n"
     } else {
-        print STDERR RED, "FAILED: $url $filename - Did not expect subCode == $subCode\n", RESET;
+        print STDERR RED, "FAILED: ${\DEVICE_SERVICE} $filename - Did not expect subCode == $subCode\n", RESET;
     }
 }
 
 sub testUnknownService {
-    my $url = "http://localhost:8088/onvif/device_service";
     my $filename = "unknown_service.xml";
 
-    my ($rc, $output, $command) = postFile($url, $filename);
+    my ($rc, $output, $command) = postFile(DEVICE_SERVICE, $filename);
 
     # Expect this call to fail
     if ($rc == 0) {
-        print STDERR RED, "FAILED: $url $filename - $output\n", RESET;
+        print STDERR RED, "FAILED: ${\DEVICE_SERVICE} $filename - $output\n", RESET;
         return;
     }
 
     # Parse and assert on XML content returned
     my $subCode = getFaultSubCode($output);
     if ($subCode eq "ter:ActionNotSupported") {
-        print STDERR BOLD, "PASSED:", RESET, " $url $filename\n"
+        print STDERR BOLD, "PASSED:", RESET, " ${\DEVICE_SERVICE} $filename\n"
     } else {
-        print STDERR RED, "FAILED: $url $filename - Did not expect subCode == $subCode\n", RESET;
+        print STDERR RED, "FAILED: ${\DEVICE_SERVICE} $filename - Did not expect subCode == $subCode\n", RESET;
     }
 
 }
 
 # Post non XML content to a valid endpoint.
 sub testNotXML {
-    my $url = "http://localhost:8088/onvif/device_service";
     my $filename = "invalid_request.xml";
 
-    my ($rc, $output, $command) = postFile($url, $filename);
+    my ($rc, $output, $command) = postFile(DEVICE_SERVICE, $filename);
 
     # Expect this call to fail
     if ($rc == 0) {
-        print STDERR RED, "FAILED: $url $filename - $output\n", RESET;
+        print STDERR RED, "FAILED: ${\DEVICE_SERVICE} $filename - $output\n", RESET;
         return;
     }
 
     # Parse and assert on XML content returned
     my $subCode = getFaultSubCode($output);
     if ($subCode eq "ter:WellFormed") {
-        print STDERR BOLD, "PASSED:", RESET, " $url $filename\n"
+        print STDERR BOLD, "PASSED:", RESET, " ${\DEVICE_SERVICE} $filename\n"
     } else {
-        print STDERR RED, "FAILED: $url $filename - Did not expect subCode == $subCode\n", RESET;
+        print STDERR RED, "FAILED: ${\DEVICE_SERVICE} $filename - Did not expect subCode == $subCode\n", RESET;
+    }
+}
 
+# Test that the URI of the media stream is valid
+sub testValidStreamURI {
+    #1. Get a stream URI
+
+    my ($rc, $xml, $command) = postFile(MEDIA_SERVICE, 'onvif/media_service/GetStreamUri.xml');
+    die "Cannot POST to ${\MEDIA_SERVICE}, curl exited with $rc" unless ($rc == 0);
+
+    my $xpath = '//trt:MediaUri/tt:Uri/text()';
+
+    my $xp = XML::XPath->new(xml => $xml);
+    $xp->set_namespace("trt", "http://www.onvif.org/ver10/media/wsdl");
+    $xp->set_namespace("tt", "http://www.onvif.org/ver10/schema");
+    my $nodeset = $xp->find($xpath);
+    my $uri = $nodeset->string_value();
+
+    #2. Use ffmpeg to check it's working
+    {
+        my $command = "ffmpeg -i $uri -t 00:00:01 -f null /dev/null 2>&1";
+        print STDERR FAINT, "$command\n", RESET if(VERBOSE);
+
+        my $output = `$command`;
+        my $rc = $?;
+
+        if ($rc == 0) {
+            print STDERR BOLD, "PASSED:", RESET, " testValidStreamURI $uri\n"
+        } else {
+            print STDERR RED, "FAILED: Cannot get URI $uri:\n", RESET;
+            print $command, "\n", $output;
+        }
     }
 }
 
@@ -177,3 +208,4 @@ testServices();
 testAuthentication();
 testUnknownService();
 testNotXML();
+testValidStreamURI();
