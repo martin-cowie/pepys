@@ -13,11 +13,11 @@ use self::media::MediaService;
 use self::events::EventsService;
 use super::camera::{TestCameraAdapter, CameraAdapter};
 
-const DEVICE_MANAGEMENT_PATH: &str = "/onvif/device_service";
-const IMAGING_MANAGEMENT_PATH: &str = "/onvif/imaging_service";
-const MEDIA_MANAGEMENT_PATH: &str = "/onvif/media_service";
-const EVENTS_MANAGEMENT_PATH: &str = "/onvif/event_service";
-const CAMERA_PREVIEW_PATH: &str = "/camera/preview";
+pub const DEVICE_MANAGEMENT_PATH: &str = "/onvif/device_service";
+pub const IMAGING_MANAGEMENT_PATH: &str = "/onvif/imaging_service";
+pub const MEDIA_MANAGEMENT_PATH: &str = "/onvif/media_service";
+pub const EVENTS_MANAGEMENT_PATH: &str = "/onvif/event_service";
+pub const CAMERA_PREVIEW_PATH: &str = "/camera/preview";
 
 //============================================================
 
