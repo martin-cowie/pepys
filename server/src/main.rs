@@ -108,7 +108,7 @@ fn get_urls(port_number: u16, suffix: &str) -> Result<Vec<String>, Box<dyn Error
         .map(|nic|
             match nic.addr {
                 IfAddr::V4(Ifv4Addr{ip, ..}) => {
-                    let separator = if !suffix.starts_with("/") {"/"} else {""};
+                    let separator = if !suffix.starts_with('/') {"/"} else {""};
                     format!("http://{ip}:{port_number}{separator}{suffix}")
                 },
                 _ => panic!("Unexpected IP address version")
