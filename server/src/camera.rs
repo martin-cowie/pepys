@@ -97,7 +97,7 @@ fn get_stream_uris() -> Vec<Uri> {
         .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)) )
         .map(|nic|
             match nic.addr {
-                IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/sample.mkv", ip), //TODO: needs a test
+                IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/sample.mkv", ip),
                 _ => panic!("Unexpected IP address version")
             }
         )
@@ -111,7 +111,8 @@ fn get_stream_uris() -> Vec<Uri> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    // use super::*;
 
+    //FIXME: write tests
 
 }

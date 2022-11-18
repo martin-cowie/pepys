@@ -4,6 +4,7 @@ mod rpi;
 mod camera;
 mod config;
 
+use camera::{CameraAdapter, TestCameraAdapter};
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 use web_services::Authenticator;
 use std::error::Error;
@@ -17,6 +18,7 @@ use hyper::Uri;
 
 use std::convert::Infallible;
 use std::env;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
@@ -43,7 +45,9 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     let web_services: &'static web_services::WebServices = {
         let service_root: Uri = xaddrs[0].parse().expect("Cannot parse root URI");
-        Box::leak(Box::new(web_services::WebServices::new(&service_root, authenticator)))
+        let camera_adapter: &'static dyn CameraAdapter = Box::leak(Box::new(TestCameraAdapter::new()));
+
+        Box::leak(Box::new(web_services::WebServices::new(&service_root, authenticator, camera_adapter)))
     };
 
 

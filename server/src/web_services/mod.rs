@@ -11,7 +11,7 @@ use self::devicemgmt::DeviceManagmentService;
 use self::imaging::ImagingService;
 use self::media::MediaService;
 use self::events::EventsService;
-use super::camera::{TestCameraAdapter, CameraAdapter};
+use super::camera::CameraAdapter;
 
 pub const DEVICE_MANAGEMENT_PATH: &str = "/onvif/device_service";
 pub const IMAGING_MANAGEMENT_PATH: &str = "/onvif/imaging_service";
@@ -74,17 +74,16 @@ pub struct WebServices {
     imaging_service: ImagingService,
     media_service: MediaService,
     events_service: EventsService,
-    camera_adapter: &'static dyn CameraAdapter //TODO: replace with reference to a trait object
+    camera_adapter: &'static dyn CameraAdapter
 }
 
 impl WebServices {
 
     /// Services are made available at, or relative to `service_root`.
     ///
-    pub fn new(service_root: &Uri, authenticator: &'static Authenticator) -> Self {
+    pub fn new(service_root: &Uri, authenticator: &'static Authenticator, camera_adapter: &'static dyn CameraAdapter) -> Self {
 
         let snapshot_uri = build_address(service_root, CAMERA_PREVIEW_PATH);
-        let camera_adapter: &'static dyn CameraAdapter = Box::leak(Box::new(TestCameraAdapter::new()));
 
         Self {
             device_management_service: DeviceManagmentService::new(
