@@ -59,7 +59,7 @@ impl DeviceManagmentService {
                 request::Body::GetSystemDateAndTime(_) => self.get_system_date_and_time()?,
                 request::Body::GetCapabilities(_) => self.get_capabilities()?,
                 request::Body::GetRelayOutputs(_) => self.get_relay_outputs()?,
-                // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?, //FIXME Deliberately omitted - but why?
+                // request::Body::SetRelayOutputSettings(_) => self.get_relay_outputs()?, // Deliberately omitted until a references can be found
                 request::Body::GetServices(_) => self.get_services()?,
 
                 _ => {
@@ -346,7 +346,7 @@ impl ExampleData<onvif::RelayOutput> for onvif::RelayOutput {
         onvif::RelayOutput{
             properties: onvif::RelayOutputSettings {
                 mode: onvif::RelayMode::Bistable,
-                delay_time: "5s".to_string(), //FIXME: a guess
+                delay_time: "5s".to_string(), //TODO: defer to docs for reasonable value
                 idle_state: onvif::RelayIdleState::Open
             },
             token:  onvif::ReferenceToken("relay1".to_string())
