@@ -48,7 +48,6 @@ pub enum SoapFaultCode {
 const SENDER: &str = "env:Sender";
 const RECEIVER: &str = "env:Receiver";
 
-//TODO: replace with a static hashmap
 impl From<SoapFaultCode> for FaultDetail {
     fn from(fault: SoapFaultCode) -> FaultDetail {
 
