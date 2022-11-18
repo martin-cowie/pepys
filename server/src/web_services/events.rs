@@ -21,7 +21,7 @@ impl EventsService {
             .map_err(|_| Ter::WellFormed)?;
 
         // Check username/password
-        // self.authenticator.authenticate(&request.header)?; -- TODO: Surveillance Station is not authenticating.
+        self.authenticator.authenticate(&request.header)?; // TODO: Surveillance Station is not authenticating.
 
         let response = match request.body {
 
