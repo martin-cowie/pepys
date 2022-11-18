@@ -5,7 +5,6 @@ use ws_addr as wsa;
 use super::Authenticator;
 
 pub struct EventsService {
-    #[allow(dead_code)] //FIXME: use this
     authenticator: &'static Authenticator
 }
 
