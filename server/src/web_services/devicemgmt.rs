@@ -1,13 +1,9 @@
 use chrono::prelude::*;
-use devicemgmt::request;
-use devicemgmt::response;
+use devicemgmt::{request, response};
 use get_if_addrs::{Interface, IfAddr, get_if_addrs};
 use hyper::Uri;
 use onvif::Ntpinformation;
-use std::net::Ipv4Addr;
-use std::net::Ipv6Addr;
-use network_interface::NetworkInterface;
-use network_interface::NetworkInterfaceConfig;
+use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
 use crate::rpi;
 use super::Authenticator;
@@ -16,6 +12,18 @@ use soap_fault::SoapFaultCode as Ter;
 
 static VERSION_MAJOR: i32 = 2;
 static VERSION_MINOR: i32 = 5;
+
+/// Count the width of an Ipv4Addr or Ipv6Addr .. or anything with an `octects` method
+macro_rules! netmask_width {
+    ($netmask:expr) => {
+        if let Some(netmask) = $netmask {
+            netmask.octets().iter().map(|x| count_ones(*x) as i32).sum()
+        } else {
+            0
+        }
+    }
+}
+
 
 pub struct DeviceManagmentService {
     service_address: Uri,
@@ -183,7 +191,7 @@ impl DeviceManagmentService {
                             link_local: None,
                             from_dhcp: Some(onvif::PrefixedIPv4Address {
                                 address: onvif::Ipv4Address(v4_addr.ip.to_string()),
-                                prefix_length: v4_netmask_width(v4_addr.netmask)
+                                prefix_length: netmask_width!(v4_addr.netmask)
                             }),
                             dhcp: true
                         }
@@ -199,7 +207,7 @@ impl DeviceManagmentService {
                             link_local: vec![],
                             from_dhcp: vec![onvif::PrefixedIPv6Address{
                                 address: onvif::Ipv6Address(v6_addr.ip.to_string()),
-                                prefix_length: v6_netmask_width(v6_addr.netmask)
+                                prefix_length: netmask_width!(v6_addr.netmask)
                             }],
                             from_ra: vec![],
                             extension: None }) }
@@ -370,28 +378,49 @@ fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
     }
 }
 
-//TODO: these two function are identical
 
-fn v6_netmask_width(netmask: network_interface::Netmask<Ipv6Addr>) -> i32 {
-    if let Some(netmask) = netmask {
-        netmask.octets().iter().map(|x| *x as i32).sum()
-    } else {
-        0
+/// Count the set bits in a byte using Brain Kerningham's algorithm.
+fn count_ones(mut value: u8) -> u8 {
+    let mut result = 0;
+    while value > 0 {
+        value &= value -1;
+        result += 1;
     }
-}
-
-fn v4_netmask_width(netmask: network_interface::Netmask<Ipv4Addr>) -> i32 {
-    if let Some(netmask) = netmask {
-        netmask.octets().iter().map(|x| *x as i32).sum()
-    } else {
-        0
-    }
+    return result;
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
     use get_if_addrs::Ifv6Addr;
+    use network_interface::Netmask;
+    use std::net::{Ipv4Addr, Ipv6Addr};
+
+
+    #[test]
+    pub fn test_netmask_width() {
+        let mask: Netmask<Ipv4Addr> = None;
+
+        assert_eq!(0, netmask_width!(mask));
+        assert_eq!(8, netmask_width!(Some(Ipv4Addr::new(127, 0, 0, 1))));
+        assert_eq!(5, netmask_width!(Some(Ipv4Addr::new(1, 2, 3, 4))));
+        assert_eq!(24, netmask_width!(Some(Ipv4Addr::new(255, 255, 255, 0))));
+        assert_eq!(16, netmask_width!(Some(Ipv4Addr::new(255, 255, 0, 0))));
+        assert_eq!(8, netmask_width!(Some(Ipv4Addr::new(255, 0, 0, 0))));
+
+        assert_eq!(1, netmask_width!(Some(Ipv6Addr::LOCALHOST)));
+        assert_eq!(4, netmask_width!(Some(Ipv6Addr::new(0,0,0,0,0,3,2,1))));
+        assert_eq!(4, netmask_width!(Some(Ipv6Addr::new(0,0,0,0,0,3,2,1))));
+        assert_eq!(16, netmask_width!(Some(Ipv6Addr::new(0xFFFF,0,0,0,0,0,0,0))));
+    }
+
+    #[test]
+    pub fn test_count_ones() {
+        assert_eq!(count_ones(0), 0);
+        assert_eq!(count_ones(0b11111111), 8);
+        assert_eq!(count_ones(0b10001000), 2);
+        assert_eq!(count_ones(0b10001000), 2);
+    }
 
     #[test]
     pub fn test_has_ip_v6_true() {
@@ -409,4 +438,5 @@ mod test {
         assert_eq!(true, DeviceManagmentService::get_has_ip_v6(with_v6_nics));
         assert_eq!(false, DeviceManagmentService::get_has_ip_v6(no_v6_nics));
     }
+
 }
