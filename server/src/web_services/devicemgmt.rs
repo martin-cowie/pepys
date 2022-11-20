@@ -386,7 +386,7 @@ fn count_ones(mut value: u8) -> u8 {
         value &= value -1;
         result += 1;
     }
-    return result;
+    result
 }
 
 #[cfg(test)]
