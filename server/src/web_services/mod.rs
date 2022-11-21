@@ -4,7 +4,7 @@ pub(crate) mod media;
 pub(crate) mod events;
 
 use soap_fault::SoapFaultCode as Ter;
-use hyper::{Method, StatusCode, body::Buf, Uri};
+use hyper::{Method, StatusCode, body::Buf, Uri, body::to_bytes};
 use hyper::header::CONTENT_TYPE;
 
 use self::devicemgmt::DeviceManagmentService;
@@ -101,8 +101,24 @@ impl WebServices {
     }
 
     pub async fn handle_http_request(&self, req: hyper::Request<hyper::Body>) -> Result<hyper::Response<hyper::Body>, hyper::Error> {
-        // TODO: refactor to reduce
-        match (req.method(), req.uri().path()) {
+
+        let result: Result<String, Ter> = match (req.method(), req.uri().path()) {
+
+            (&Method::POST, IMAGING_MANAGEMENT_PATH) => self
+                .imaging_service
+                .process_request(to_read(req).await?),
+
+            (&Method::POST, DEVICE_MANAGEMENT_PATH) => self
+                .device_management_service
+                .process_request(to_read(req).await?),
+
+            (&Method::POST, MEDIA_MANAGEMENT_PATH) => self
+                .media_service
+                .process_request(to_read(req).await?),
+
+            (&Method::POST, EVENTS_MANAGEMENT_PATH) => self
+                .events_service
+                .process_request(to_read(req).await?),
 
             (&Method::GET, CAMERA_PREVIEW_PATH) => {
                 let (file_bytes, mime_type) = self.camera_adapter.get_preview();
@@ -111,49 +127,8 @@ impl WebServices {
                     .header(CONTENT_TYPE, mime_type)
                     .body(hyper::Body::from(file_bytes))
                     .unwrap_or_default();
-                Ok(response)
+                return Ok(response);
             }
-
-            (&Method::POST, IMAGING_MANAGEMENT_PATH) => {
-                let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-
-                let result = self.imaging_service.process_request(whole_body.reader());
-                match result {
-                    Ok(string) => Ok(build_response(string)),
-                    Err(detail) => Ok(detail.into())
-                }
-            }
-
-            (&Method::POST, DEVICE_MANAGEMENT_PATH) => {
-                let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-
-                let result = self.device_management_service.process_request(whole_body.reader());
-                match result {
-                    Ok(string) => Ok(build_response(string)),
-                    Err(detail) => Ok(detail.into())
-                }
-            },
-
-            (&Method::POST, MEDIA_MANAGEMENT_PATH) => {
-                let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-
-                let result = self.media_service.process_request(whole_body.reader());
-                match result {
-                    Ok(string) => Ok(build_response(string)),
-                    Err(detail) => Ok(detail.into())
-                }
-            },
-
-            (&Method::POST, EVENTS_MANAGEMENT_PATH) => {
-                let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-
-                let result = self.events_service.process_request(whole_body.reader());
-                match result {
-                    Ok(string) => Ok(build_response(string)),
-                    Err(detail) => Ok(detail.into())
-                }
-
-            },
 
             // Return 404 Not Found for all other methods & URIs.
             _ => {
@@ -164,14 +139,32 @@ impl WebServices {
                     .body(hyper::Body::from(response_content))
                     .unwrap_or_default();
 
-                Ok(response)
+                return Ok(response);
             }
+        };
+
+        match result {
+            Ok(xml_str) => {
+                let result = hyper::Response::builder()
+                    .header(CONTENT_TYPE, "application/soap+xml")
+                    .body(hyper::Body::from(xml_str))
+                    .unwrap_or_default();
+                Ok(result)
+            },
+            Err(detail) => Ok(detail.into())
         }
+
     }
 
 }
 
 //===| Support functions |=======
+
+/// Extract the request body as as std::io::Read impl.
+async fn to_read(req: hyper::Request<hyper::Body>) -> Result<impl std::io::Read, hyper::Error> {
+    let whole_body = to_bytes(req.into_body()).await?;
+    Ok(whole_body.reader())
+}
 
 /// Build a Uri comprising the root of `root` and a path of `path`.
 fn build_address(root: &Uri, path: &str) -> Uri {
@@ -184,15 +177,6 @@ fn build_address(root: &Uri, path: &str) -> Uri {
         .path_and_query(path)
         .build()
         .expect("Cannot deconstruct service root")
-}
-
-
-/// Compose and set headers for an XML response
-fn build_response(xml_str: String) -> hyper::Response<hyper::Body> {
-    hyper::Response::builder()
-        .header(CONTENT_TYPE, "application/soap+xml")
-        .body(hyper::Body::from(xml_str))
-        .unwrap_or_default()
 }
 
 #[cfg(test)]
