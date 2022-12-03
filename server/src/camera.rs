@@ -7,7 +7,7 @@ use tracing::{info, warn, error};
 
 pub trait CameraAdapter: Send + Sync { // Extra traits so it can be shared with > 1 thread
     fn get_preview(&self) -> (Vec<u8>, String);
-    fn get_camera_streams(&self) -> Vec<Uri>; //Uri does not handle RTSP URIs
+    fn get_camera_streams(&self) -> Vec<Uri>;
 }
 
 
@@ -46,39 +46,49 @@ pub fn start_and_log_command(mut command: Command) -> Result<Child, Box<dyn Erro
     Ok(child)
 }
 
+
+
 //====| Test Implementation |=======================================
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 
-const RTSP_SERVER: &str = "live555MediaServer";
-
-pub struct TestCameraAdapter {
+pub struct ChildProcessCameraAdapter {
     stream_uris: Vec<Uri>,
 }
 
-impl TestCameraAdapter {
-    pub fn new() -> Self {
-        let stream_uris = get_stream_uris();
-
-        let mut child = start_and_log_command(Command::new(RTSP_SERVER)).expect("Cannot start RTSP server");
+impl ChildProcessCameraAdapter {
+    pub fn new(command_line: &str) -> Self {
+        let command: Command = Self::to_command(command_line);
+        let mut child = start_and_log_command(command).unwrap_or_else(|_|panic!("Cannot start RTSP server: {}", command_line));
         let child_pid = child.id().unwrap();
-        info!("Started {} with pid {}", RTSP_SERVER, child_pid);
+        info!("Started {} with pid {}", command_line, child_pid);
 
         tokio::spawn(async move {
             let status = child.wait().await;
             match status {
-                Ok(status) => error!("Unexpected exit of {} pid {}: {:?}", RTSP_SERVER, child_pid, status),
+                Ok(status) => error!("Unexpected exit of pid {}: {:?}", child_pid, status),
                 Err(err) => error!("Cannot reap child: {}", err),
             }
             std::process::exit(1);
         });
 
+        let stream_uris = get_stream_uris();
         Self {
             stream_uris
         }
     }
+
+    fn to_command(command_line: &str) -> Command {
+        let mut tokens = command_line.split_whitespace();
+
+        let mut result = Command::new(tokens.next().expect("Child process command line cannot be empty"));
+        tokens.for_each(|token| {result.arg(token);});
+
+        result
+    }
+
 }
 
-impl CameraAdapter for TestCameraAdapter {
+impl CameraAdapter for ChildProcessCameraAdapter {
 
     /// Returns the preview image and its MIME type
     fn get_preview(&self) -> (Vec<u8>, String) {
@@ -108,6 +118,8 @@ fn get_stream_uris() -> Vec<Uri> {
 
     result
 }
+
+
 
 #[cfg(test)]
 mod test {
