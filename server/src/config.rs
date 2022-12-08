@@ -6,8 +6,7 @@ use std::error::Error;
 pub struct Config {
     pub port: u16,
     pub username: String,
-    pub password: String,
-    pub rtsp_server_command: String
+    pub password: String
 }
 
 impl Config {
@@ -23,8 +22,7 @@ impl Default for Config {
         Self {
             port: 8088,
             username: "admin".to_string(),
-            password: "password123".to_string(),
-            rtsp_server_command: "live555MediaServer".to_string()
+            password: "password123".to_string()
         }
     }
 }
