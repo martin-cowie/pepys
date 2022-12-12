@@ -23,7 +23,8 @@ members = [
     "soap-fault"
 ]
 exclude = [
-    "build_scripts/xml-to-rs"
+    "build_scripts/xml-to-rs",
+    "integration_testing"
 ]
 
 [workspace.package]
