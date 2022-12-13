@@ -1,9 +1,19 @@
 use hyper::Uri;
-use std::error::Error;
-use std::process::{Stdio};
+use regex::Regex;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Command, Child};
 use tracing::{info, warn, error};
+use static_init::dynamic;
+
+use std::error::Error;
+use std::process::Stdio;
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
+use std::time::Duration;
+
+#[dynamic]
+/// A Regular expression handle IPv4 RTSP URIs with an optional port number
+static RTSP_URI_REGEX: Regex = Regex::new(r"(rtsp://\d+\.\d+\.\d+\.\d+(:\d+)?)/").expect("Cannot compile regex");
 
 pub trait CameraAdapter: Send + Sync { // Extra traits so it can be shared with > 1 thread
     fn get_preview(&self) -> (Vec<u8>, String);
@@ -31,23 +41,7 @@ macro_rules! relay_pipe_lines {
     };
 }
 
-pub fn start_and_log_command(mut command: Command) -> Result<Child, Box<dyn Error>> {
-    command.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-    let mut child = command.spawn()?;
-
-    let child_stdout = child.stdout.take().unwrap();
-    let child_stderr = child.stderr.take().unwrap();
-    let child_pid = child.id().unwrap();
-
-    relay_pipe_lines!(child_stdout, |line|info!("[pid {}:stdout]: {}", child_pid, line));
-    relay_pipe_lines!(child_stderr, |line|warn!("[pid {}:stderr]: {}", child_pid, line));
-
-    Ok(child)
-}
-
 //====| Test Implementation |=======================================
-use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 
 const RTSP_SERVER: &str = "live555MediaServer";
 
@@ -57,11 +51,13 @@ pub struct TestCameraAdapter {
 
 impl TestCameraAdapter {
     pub fn new() -> Self {
-        let stream_uris = get_stream_uris();
-
-        let mut child = start_and_log_command(Command::new(RTSP_SERVER)).expect("Cannot start RTSP server");
+        let (mut child, mut rtsp_uri) = Self::start_and_log_test_server().expect("Cannot start RTSP server");
         let child_pid = child.id().unwrap();
-        info!("Started {} with pid {}", RTSP_SERVER, child_pid);
+        rtsp_uri.push_str("/sample.mkv");
+
+        info!("Started {} with pid {}, and RTSP end point {}", RTSP_SERVER, child_pid, rtsp_uri);
+
+        let stream_uris = vec![rtsp_uri.parse().expect("Cannot parse RTSP URI")];
 
         tokio::spawn(async move {
             let status = child.wait().await;
@@ -76,6 +72,42 @@ impl TestCameraAdapter {
             stream_uris
         }
     }
+
+    /// Start the test server, and return the child process and the URI at which it listens
+    fn start_and_log_test_server() -> Result<(Child, String), Box<dyn Error>> {
+        let mut child = Command::new(RTSP_SERVER)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped()).spawn()?;
+
+        let child_stdout = child.stdout.take().unwrap();
+        let child_stderr = child.stderr.take().unwrap();
+        let child_pid = child.id().unwrap();
+        let mut found_uri = false;
+
+        relay_pipe_lines!(child_stdout, |line: String|{
+            info!("[pid {}:stdout]: {}", child_pid, line);
+        });
+
+        let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
+
+        relay_pipe_lines!(child_stderr, |line: String |{
+            if found_uri == false { // if let will not combin with bool shortcut
+                if let Some(captures) = RTSP_URI_REGEX.captures(&line) {
+                    let rtsp_uri = captures.get(1).unwrap().as_str().to_string();
+                    tx.send(rtsp_uri).expect("Cannot send URI via channel");
+                    found_uri = true
+                }
+            }
+
+            warn!("[pid {}:stderr]: {}", child_pid, line);
+        });
+
+        // Gather the URI from the stderr listener/logger
+        let rtsp_uri = rx.recv_timeout(Duration::from_secs(5)).expect("Cannot receive URI via channel");
+
+        Ok((child, rtsp_uri))
+    }
+
 }
 
 impl CameraAdapter for TestCameraAdapter {
@@ -91,28 +123,16 @@ impl CameraAdapter for TestCameraAdapter {
     }
 }
 
-fn get_stream_uris() -> Vec<Uri> {
-    let result: Vec<Uri> = get_if_addrs().expect("Cannot get NICs")
-        .into_iter()
-        .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)) )
-        .map(|nic|
-            match nic.addr {
-                IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/sample.mkv", ip),
-                _ => panic!("Unexpected IP address version")
-            }
-        )
-        .map(|str| {
-            str.parse().expect("Cannot parse RTSP URI")
-        })
-        .collect();
-
-    result
-}
-
 #[cfg(test)]
 mod test {
-    // use super::*;
+    use super::*;
 
-    //FIXME: write tests
+    #[test]
+    fn test_regex() {
+        let result = RTSP_URI_REGEX.captures(r#"rtsp://192.168.59.27/<filename>"#);
+        assert!(matches!(result, Some(caps) if caps.get(1).unwrap().as_str() == "rtsp://192.168.59.27"));
 
+        let result = RTSP_URI_REGEX.captures(r#"rtsp://192.168.59.27:8554/<filename>"#);
+        assert!(matches!(result, Some(caps) if caps.get(1).unwrap().as_str() == "rtsp://192.168.59.27:8554"));
+    }
 }

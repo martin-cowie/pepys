@@ -1,3 +1,7 @@
+fn main() {
+    /* do nothing */
+}
+
 #[cfg(test)]
 mod tests {
     use core::panic;

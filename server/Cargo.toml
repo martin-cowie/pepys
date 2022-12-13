@@ -20,6 +20,7 @@ xsd-types.workspace = true
 libc-strftime.workspace = true
 network-interface.workspace = true
 toml.workspace = true
+regex.workspace = true
 serde.workspace = true
 serde_derive.workspace = true
 
