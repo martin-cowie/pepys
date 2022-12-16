@@ -20,7 +20,7 @@ static RTSP_URI_REGEX: Regex = Regex::new(r"(rtsp://\d+\.\d+\.\d+\.\d+(:\d+)?)/"
 
 pub trait CameraAdapter: Send + Sync { // Extra traits so it can be shared with > 1 thread
     fn get_preview(&self) -> (Vec<u8>, String);
-    fn get_camera_streams(&self) -> Vec<Uri>; //Uri does not handle RTSP URIs
+    fn get_camera_streams(&self) -> Vec<Uri>;
 }
 
 
@@ -72,7 +72,7 @@ impl PiCameraAdapter {
             .unwrap_or_else(|err|panic!("Cannot start RTSP server '{}': {}", args[0], err));
         let child_pid = child.id().unwrap();
 
-        let stream_uris = Self::get_stream_uris();
+        let stream_uris = Self::get_stream_uris(pi_camera.port);
 
         info!("Began RTSP server with pid {}, and RTSP URIs {:?}", child_pid, stream_uris);
         monitor_child(child);
@@ -103,13 +103,13 @@ impl PiCameraAdapter {
         Ok(child)
     }
 
-    fn get_stream_uris() -> Vec<Uri> {
+    fn get_stream_uris(port_number: u16) -> Vec<Uri> {
         let result: Vec<Uri> = get_if_addrs().expect("Cannot get NICs")
             .into_iter()
             .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)) )
             .map(|nic|
                 match nic.addr {
-                    IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/h264", ip),
+                    IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}:{}/h264", ip, port_number),
                     _ => panic!("Unexpected IP address version")
                 }
             )
