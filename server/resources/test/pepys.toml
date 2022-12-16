@@ -2,3 +2,8 @@
 port = 1234
 username = "some_user"
 password = "some_password"
+adapter_type = "Pi"
+
+[pi-camera]
+command = ["foo", "bar", "baz"]
+port = 8554

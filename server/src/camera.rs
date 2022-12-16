@@ -1,15 +1,18 @@
+use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 use hyper::Uri;
 use regex::Regex;
+use static_init::dynamic;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Command, Child};
 use tracing::{info, warn, error};
-use static_init::dynamic;
 
 use std::error::Error;
 use std::process::Stdio;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::time::Duration;
+
+use crate::config::PiCameraConfig;
 
 #[dynamic]
 /// A Regular expression handle IPv4 RTSP URIs with an optional port number
@@ -41,6 +44,98 @@ macro_rules! relay_pipe_lines {
     };
 }
 
+fn monitor_child(mut child: Child) {
+    tokio::spawn(async move {
+        let child_pid = child.id().unwrap();
+        let status = child.wait().await;
+        match status {
+            Ok(status) => error!("Unexpected exit of pid {}: {:?}", child_pid, status),
+            Err(err) => error!("Cannot reap child: {}", err),
+        }
+        std::process::exit(1);
+    });
+
+}
+
+//====| Raspberry Pi Camera |=======================================
+
+const JPEG_MIME_TYPE: &str = "image/jpeg";
+
+pub struct PiCameraAdapter {
+    stream_uris: Vec<Uri>,
+}
+
+impl PiCameraAdapter {
+    pub fn new(pi_camera: &PiCameraConfig) -> Self {
+        let args = pi_camera.get_command();
+        let child = Self::start_and_log_rtsp_server(&args)
+            .unwrap_or_else(|err|panic!("Cannot start RTSP server '{}': {}", args[0], err));
+        let child_pid = child.id().unwrap();
+
+        let stream_uris = Self::get_stream_uris();
+
+        info!("Began RTSP server with pid {}, and RTSP URIs {:?}", child_pid, stream_uris);
+        monitor_child(child);
+
+
+        PiCameraAdapter {
+           stream_uris
+        }
+    }
+
+    fn start_and_log_rtsp_server(args: &Vec<String>) -> Result<Child, Box<dyn Error>> {
+        let mut child = Command::new(&args[0])
+            .args(&args[1..])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped()).spawn()?;
+
+        let child_stdout = child.stdout.take().unwrap();
+        let child_stderr = child.stderr.take().unwrap();
+        let child_pid = child.id().unwrap();
+
+        relay_pipe_lines!(child_stdout, |line: String|{
+            info!("[pid {}:stdout]: {}", child_pid, line);
+        });
+        relay_pipe_lines!(child_stderr, |line: String|{
+            warn!("[pid {}:stderr]: {}", child_pid, line);
+        });
+
+        Ok(child)
+    }
+
+    fn get_stream_uris() -> Vec<Uri> {
+        let result: Vec<Uri> = get_if_addrs().expect("Cannot get NICs")
+            .into_iter()
+            .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)) )
+            .map(|nic|
+                match nic.addr {
+                    IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}/h264", ip),
+                    _ => panic!("Unexpected IP address version")
+                }
+            )
+            .map(|str| {
+                str.parse().expect("Cannot parse RTSP URI")
+            })
+            .collect();
+
+        result
+    }
+
+}
+
+impl CameraAdapter for PiCameraAdapter {
+    fn get_preview(&self) -> (Vec<u8>, String) {
+        let file_bytes = include_bytes!("pepys.jpeg").to_vec();
+        (file_bytes, JPEG_MIME_TYPE.to_string()) //TODO: could be &str
+    }
+
+    fn get_camera_streams(&self) -> Vec<Uri> {
+        self.stream_uris.clone() //TODO: replace with a reference
+    }
+}
+
+
+
 //====| Test Implementation |=======================================
 
 const RTSP_SERVER: &str = "live555MediaServer";
@@ -51,23 +146,14 @@ pub struct TestCameraAdapter {
 
 impl TestCameraAdapter {
     pub fn new() -> Self {
-        let (mut child, mut rtsp_uri) = Self::start_and_log_test_server().expect("Cannot start RTSP server");
+        let (child, mut rtsp_uri) = Self::start_and_log_test_server().expect("Cannot start RTSP server");
         let child_pid = child.id().unwrap();
         rtsp_uri.push_str("/sample.mkv");
 
-        info!("Started {} with pid {}, and RTSP end point {}", RTSP_SERVER, child_pid, rtsp_uri);
+        info!("Began {} with pid {}, and RTSP URI {}", RTSP_SERVER, child_pid, rtsp_uri);
+        monitor_child(child);
 
         let stream_uris = vec![rtsp_uri.parse().expect("Cannot parse RTSP URI")];
-
-        tokio::spawn(async move {
-            let status = child.wait().await;
-            match status {
-                Ok(status) => error!("Unexpected exit of {} pid {}: {:?}", RTSP_SERVER, child_pid, status),
-                Err(err) => error!("Cannot reap child: {}", err),
-            }
-            std::process::exit(1);
-        });
-
         Self {
             stream_uris
         }

@@ -4,7 +4,7 @@ mod rpi;
 mod camera;
 mod config;
 
-use camera::{CameraAdapter, TestCameraAdapter};
+use camera::{CameraAdapter, TestCameraAdapter, PiCameraAdapter};
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 use web_services::Authenticator;
 use std::error::Error;
@@ -45,7 +45,11 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     let web_services: &'static web_services::WebServices = {
         let service_root: Uri = xaddrs[0].parse().expect("Cannot parse root URI");
-        let camera_adapter: &'static dyn CameraAdapter = Box::leak(Box::new(TestCameraAdapter::new()));
+        let camera_adapter: &'static dyn CameraAdapter = match config.adapter_type {
+            config::AdapterType::Test => Box::leak(Box::new(TestCameraAdapter::new())),
+            config::AdapterType::Pi => Box::leak(Box::new(PiCameraAdapter::new(&config.pi_camera))),
+
+        };
 
         Box::leak(Box::new(web_services::WebServices::new(&service_root, authenticator, camera_adapter)))
     };
