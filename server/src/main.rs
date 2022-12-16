@@ -8,7 +8,7 @@ use camera::{CameraAdapter, TestCameraAdapter, PiCameraAdapter};
 use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 use web_services::Authenticator;
 use std::error::Error;
-use tracing::{info, error};
+use tracing::{info, trace, error};
 use ws_discovery_responder::bind_ws_discovery_responder;
 
 use hyper::server::conn::AddrStream;
@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
                             let log_entry = format!("Responding to request for URI {} from {} => {}", uri, addr, status);
 
                             if status.is_success() || status.is_informational() {
-                                info!("{}", log_entry);
+                                trace!("{}", log_entry);
                             } else {
                                 error!("{}", log_entry);
                             }
