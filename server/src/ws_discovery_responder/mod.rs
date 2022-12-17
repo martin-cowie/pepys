@@ -27,8 +27,8 @@ const ADDRESSING_ROLE_ANON: &str = "http://schemas.xmlsoap.org/ws/2004/08/addres
 #[dynamic]
 static SCOPES: Vec<&'static str> = vec![
     "onvif://www.onvif.org/type/video_encoder",
-    "onvif://www.onvif.org/hardware/Pepys",
-    "onvif://www.onvif.org/name/Pepys",
+    concat!("onvif://www.onvif.org/hardware/Pepys", "%20", env!("CARGO_PKG_VERSION")),
+    concat!("onvif://www.onvif.org/name/Pepys", "%20", env!("CARGO_PKG_VERSION")),
     "onvif://www.onvif.org/location/"
 ];
 
