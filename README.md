@@ -11,5 +11,5 @@ To install on a Mac `brew install openrtsp`
 
 To install on Linux `sudo apt-get install livemedia-utils`
 
-* Continuous Integration
+## Continuous Integration
 [![CircleCI](https://circleci.com/gh/martin-cowie/pepys.svg?style=shield)](https://circleci.com/gh/martin-cowie/pepys)
