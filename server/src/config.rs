@@ -1,4 +1,5 @@
-use regex::Regex;
+use regex::{Regex, Captures};
+
 use serde_derive::Deserialize;
 use static_init::dynamic;
 use std::fs;
@@ -36,15 +37,14 @@ impl PiCameraConfig {
     // Get the interpolated command line
     pub fn get_command(&self) -> Vec<String> {
         self.command.iter().map(|elem| {
-            if let Some(captures) = VARIABLE_REGEX.captures(&elem) {
-                let var_name = captures.get(1).unwrap().as_str();
+            let result = VARIABLE_REGEX.replace_all(&elem, |caps: &Captures| {
+                let var_name = &caps[1];
                 match var_name {
                     "port" => self.port.to_string(),
-                    _ => panic!("Unknown variable {}", var_name)
+                    _ => panic!("Unexpected variable {}", var_name)
                 }
-            } else {
-                elem.clone()
-            }
+            });
+            result.to_string()
         }).collect()
     }
 }
@@ -85,6 +85,7 @@ impl Default for PiCameraConfig {
 mod test {
     use super::*;
     use std::path::PathBuf;
+    use regex::Captures;
 
     #[test]
     pub fn test_load_fails() {
@@ -110,16 +111,16 @@ mod test {
     #[test]
     pub fn test_pi_camera_interp() {
         let pi_camera = PiCameraConfig {
-            command: vec!["${port}".to_string(), "bar".to_string()],
+            command: vec!["[${port}]".to_string(), "bar".to_string()],
             port: 1234,
         };
 
         let command = pi_camera.get_command();
-        assert_eq!(command, vec!["1234", "bar"]);
+        assert_eq!(command, vec!["[1234]", "bar"]);
     }
 
     #[test]
-    #[should_panic(expected = "Unknown variable foo")]
+    #[should_panic(expected = "Unexpected variable foo")]
     pub fn test_pi_camera_interp_bad() {
         let pi_camera = PiCameraConfig {
             command: vec!["${foo}".to_string(), "bar".to_string()],
@@ -127,6 +128,19 @@ mod test {
         };
 
         pi_camera.get_command();
+    }
+
+    #[test]
+    pub fn test_regex_replace() {
+        let result = VARIABLE_REGEX.replace("foo ${bar} baz", |caps: &Captures| {
+            format!("[{}]", &caps[1])
+        });
+        assert_eq!(result, "foo [bar] baz");
+
+        let result = VARIABLE_REGEX.replace("foo bar baz", |caps: &Captures| {
+            format!("[{}]", &caps[1])
+        });
+        assert_eq!(result, "foo bar baz");
     }
 
 }
