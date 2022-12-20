@@ -83,7 +83,7 @@ impl PiCameraAdapter {
         }
     }
 
-    fn start_and_log_rtsp_server(args: &Vec<String>) -> Result<Child, Box<dyn Error>> {
+    fn start_and_log_rtsp_server(args: &[String]) -> Result<Child, Box<dyn Error>> {
         let mut child = Command::new(&args[0])
             .args(&args[1..])
             .stdout(Stdio::piped())
@@ -177,7 +177,7 @@ impl TestCameraAdapter {
         let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
         relay_pipe_lines!(child_stderr, |line: String |{
-            if found_uri == false { // if let will not combin with bool shortcut
+            if !found_uri { // if let will not combin with bool shortcut
                 if let Some(captures) = RTSP_URI_REGEX.captures(&line) {
                     let rtsp_uri = captures.get(1).unwrap().as_str().to_string();
                     tx.send(rtsp_uri).expect("Cannot send URI via channel");

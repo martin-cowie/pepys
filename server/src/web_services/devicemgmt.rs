@@ -372,7 +372,7 @@ fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
             minute: time.minute() as i32,
             second: time.second() as i32 },
         date: onvif::Date{
-            year: time.year() as i32,
+            year: time.year(),
             month: time.month() as i32,
             day: time.day() as i32 }
     }

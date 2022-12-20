@@ -37,7 +37,7 @@ impl PiCameraConfig {
     // Get the interpolated command line
     pub fn get_command(&self, username: &str, password: &str) -> Vec<String> {
         self.command.iter().map(|elem| {
-            let result = VARIABLE_REGEX.replace_all(&elem, |caps: &Captures| {
+            let result = VARIABLE_REGEX.replace_all(elem, |caps: &Captures| {
                 let var_name = &caps[1];
                 match var_name {
                     "port" => self.port.to_string(),
