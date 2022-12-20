@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
         let service_root: Uri = xaddrs[0].parse().expect("Cannot parse root URI");
         let camera_adapter: &'static dyn CameraAdapter = match config.adapter_type {
             config::AdapterType::Test => Box::leak(Box::new(TestCameraAdapter::new())),
-            config::AdapterType::Pi => Box::leak(Box::new(PiCameraAdapter::new(&config.pi_camera))),
+            config::AdapterType::Pi => Box::leak(Box::new(PiCameraAdapter::new(&config.pi_camera, &config.username, &config.password))),
 
         };
 

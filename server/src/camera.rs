@@ -66,8 +66,8 @@ pub struct PiCameraAdapter {
 }
 
 impl PiCameraAdapter {
-    pub fn new(pi_camera: &PiCameraConfig) -> Self {
-        let args = pi_camera.get_command();
+    pub fn new(pi_camera: &PiCameraConfig, username: &str, password: &str) -> Self {
+        let args = pi_camera.get_command(username, password);
         let child = Self::start_and_log_rtsp_server(&args)
             .unwrap_or_else(|err|panic!("Cannot start RTSP server '{}': {}", args[0], err));
         let child_pid = child.id().unwrap();

@@ -6,7 +6,7 @@ use std::fs;
 use std::error::Error;
 
 #[dynamic]
-static VARIABLE_REGEX: Regex = Regex::new(r"\$\{(.+?)\}").expect("Cannot compile regex");
+static VARIABLE_REGEX: Regex = Regex::new(r"\$\{(\w+)\}").expect("Cannot compile regex");
 
 #[derive(Deserialize, Debug, PartialEq)]
 pub enum AdapterType {
@@ -35,12 +35,14 @@ pub struct PiCameraConfig {
 
 impl PiCameraConfig {
     // Get the interpolated command line
-    pub fn get_command(&self) -> Vec<String> {
+    pub fn get_command(&self, username: &str, password: &str) -> Vec<String> {
         self.command.iter().map(|elem| {
             let result = VARIABLE_REGEX.replace_all(&elem, |caps: &Captures| {
                 let var_name = &caps[1];
                 match var_name {
                     "port" => self.port.to_string(),
+                    "user" => username.to_string(),
+                    "password" => password.to_string(),
                     _ => panic!("Unexpected variable {}", var_name)
                 }
             });
@@ -73,7 +75,7 @@ impl Default for Config {
 impl Default for PiCameraConfig {
     fn default() -> Self {
         Self {
-            command: vec!["v4l2rtspserver", "-P", "${port}", "-u", "h264", "-W", "1280", "-H", "720", "/dev/video0"]
+            command: vec!["v4l2rtspserver", "-P", "${port}", "-u", "h264", "-W", "1280", "-H", "720", "-U", "${user}:${password}", "/dev/video0"]
                 .into_iter().map(|str| str.to_string()).collect(),
             port: 8554,
         }
@@ -111,12 +113,12 @@ mod test {
     #[test]
     pub fn test_pi_camera_interp() {
         let pi_camera = PiCameraConfig {
-            command: vec!["[${port}]".to_string(), "bar".to_string()],
+            command: vec!["[${port}]".to_string(), "bar".to_string(), "${password}-${user}".to_string()],
             port: 1234,
         };
 
-        let command = pi_camera.get_command();
-        assert_eq!(command, vec!["[1234]", "bar"]);
+        let command = pi_camera.get_command("some_user", "some_password");
+        assert_eq!(command, vec!["[1234]", "bar", "some_password-some_user"]);
     }
 
     #[test]
@@ -127,7 +129,7 @@ mod test {
             port: 1234,
         };
 
-        pi_camera.get_command();
+        pi_camera.get_command("user", "passwd");
     }
 
     #[test]
