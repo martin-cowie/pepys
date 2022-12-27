@@ -1,0 +1,7 @@
+[build]
+# Or set CARGO_BUILD_TARGET
+# target = "arm-unknown-linux-musleabihf"
+
+[target.arm-unknown-linux-musleabihf]
+linker = "arm-linux-gnueabihf-ld"
+ar = "arm-linux-gnueabihf-ar" # optional

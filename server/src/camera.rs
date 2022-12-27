@@ -1,4 +1,3 @@
-use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 use hyper::Uri;
 use regex::Regex;
 use static_init::dynamic;
@@ -13,6 +12,7 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use crate::config::PiCameraConfig;
+use crate::nics;
 
 #[dynamic]
 /// A Regular expression handle IPv4 RTSP URIs with an optional port number
@@ -104,21 +104,11 @@ impl PiCameraAdapter {
     }
 
     fn get_stream_uris(port_number: u16) -> Vec<Uri> {
-        let result: Vec<Uri> = get_if_addrs().expect("Cannot get NICs")
-            .into_iter()
-            .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)) )
-            .map(|nic|
-                match nic.addr {
-                    IfAddr::V4(Ifv4Addr{ip, ..}) => format!("rtsp://{}:{}/h264", ip, port_number),
-                    _ => panic!("Unexpected IP address version")
-                }
-            )
-            .map(|str| {
-                str.parse().expect("Cannot parse RTSP URI")
-            })
-            .collect();
-
-        result
+        nics::get_v4_addresses()
+            .map(|ip|format!("rtsp://{}:{}/h264", ip, port_number)
+                .parse()
+                .expect("Cannot parse RTSP URI")
+            ).collect()
     }
 
 }

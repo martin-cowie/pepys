@@ -3,9 +3,9 @@ mod web_services;
 mod rpi;
 mod camera;
 mod config;
+mod nics;
 
 use camera::{CameraAdapter, TestCameraAdapter, PiCameraAdapter};
-use get_if_addrs::{get_if_addrs, IfAddr, Ifv4Addr};
 use web_services::Authenticator;
 use std::error::Error;
 use tracing::{info, trace, error};
@@ -106,18 +106,11 @@ async fn main() -> Result<(), Box<dyn Error>>{
 /// the set of IP addresses associated with non-loopback NICs
 /// Argument `suffix` is affixed to the result with a delimiting `/` character if it does not start with one.
 fn get_urls(port_number: u16, suffix: &str) -> Result<Vec<String>, Box<dyn Error>> {
-    let urls: Vec<String> = get_if_addrs()?
-        .into_iter()
-        .filter(|nic| !nic.is_loopback() && !matches!(nic.addr, IfAddr::V6(_)))
-        .map(|nic|
-            match nic.addr {
-                IfAddr::V4(Ifv4Addr{ip, ..}) => {
-                    let separator = if !suffix.starts_with('/') {"/"} else {""};
-                    format!("http://{ip}:{port_number}{separator}{suffix}")
-                },
-                _ => panic!("Unexpected IP address version")
-            }
-        )
+    let urls: Vec<String> = nics::get_v4_addresses()
+        .map(|ip| {
+            let separator = if !suffix.starts_with('/') {"/"} else {""};
+            format!("http://{ip}:{port_number}{separator}{suffix}")
+        })
         .collect();
 
     Ok(urls)

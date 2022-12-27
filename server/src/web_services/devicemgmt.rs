@@ -1,29 +1,16 @@
 use chrono::prelude::*;
 use devicemgmt::{request, response};
-use get_if_addrs::{Interface, IfAddr, get_if_addrs};
 use hyper::Uri;
 use onvif::Ntpinformation;
-use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
 use crate::rpi;
+use crate::nics;
 use super::Authenticator;
 use super::ExampleData;
 use soap_fault::SoapFaultCode as Ter;
 
 static VERSION_MAJOR: i32 = 2;
 static VERSION_MINOR: i32 = 5;
-
-/// Count the width of an Ipv4Addr or Ipv6Addr .. or anything with an `octects` method
-macro_rules! netmask_width {
-    ($netmask:expr) => {
-        if let Some(netmask) = $netmask {
-            netmask.octets().iter().map(|x| count_ones(*x) as i32).sum()
-        } else {
-            0
-        }
-    }
-}
-
 
 pub struct DeviceManagmentService {
     service_address: Uri,
@@ -44,7 +31,7 @@ impl DeviceManagmentService {
             media_address,
             events_address,
             authenticator,
-            has_ip_v6: Self::get_has_ip_v6(get_if_addrs().expect("Cannot get NICs"))
+            has_ip_v6: false
         }
     }
 
@@ -76,16 +63,9 @@ impl DeviceManagmentService {
             }
         };
 
-
         let result = yaserde::ser::to_string(&response)
             .map_err(|_| Ter::Action)?;
         Ok(result)
-    }
-
-    fn get_has_ip_v6(nics: Vec<Interface>) -> bool {
-        nics
-            .into_iter()
-            .any(|nic| matches!(nic.addr, IfAddr::V6(_)) )
     }
 
     //===| Request Handlers |=======
@@ -170,48 +150,34 @@ impl DeviceManagmentService {
     }
 
     fn get_network_interfaces(&self) -> Result<devicemgmt::response::Envelope, Ter> {
-        let network_interfaces = NetworkInterface::show()
-            .map_err(|_| Ter::WellFormed)?;
 
-        let nic_structs: Vec<onvif::NetworkInterface> = network_interfaces.iter()
+        let nic_structs: Vec<onvif::NetworkInterface> = nics::summarise()
+            .expect("Cannot get NICs")
+            .iter()
             .map(|nic| {
-            onvif::NetworkInterface{
-                enabled: true, //TODO: this is a guess
+                onvif::NetworkInterface{
+                enabled: true,
                 info: Some(onvif::NetworkInterfaceInfo{
                     name: Some(nic.name.clone()),
-                    hw_address: onvif::HwAddress(nic.mac_addr.clone().unwrap_or_default()),
+                    hw_address: onvif::HwAddress(nic.mac_address.clone().unwrap_or_default()),
                     mtu: None,
                 }),
                 link: None,
-                i_pv_4: if let Some(network_interface::Addr::V4(v4_addr)) = nic.addr {vec![
+                i_pv_4: nic.ipv4_addresses.iter().map(|(address,netmask)| {
                     onvif::Ipv4NetworkInterface {
-                        enabled: true, //TODO: this is a guess
+                        enabled: true,
                         config: onvif::Ipv4Configuration {
                             manual: vec![],
                             link_local: None,
                             from_dhcp: Some(onvif::PrefixedIPv4Address {
-                                address: onvif::Ipv4Address(v4_addr.ip.to_string()),
-                                prefix_length: netmask_width!(v4_addr.netmask)
+                                address: onvif::Ipv4Address(address.to_string()),
+                                prefix_length: nics::netmask_width(&netmask)
                             }),
-                            dhcp: true
+                            dhcp: true /* this is a guess */
                         }
                     }
-                ]} else {vec![]},
-                i_pv_6: if let Some(network_interface::Addr::V6(v6_addr)) = nic.addr {vec![
-                    onvif::Ipv6NetworkInterface {
-                        enabled:true, //TODO: this is a guess
-                        config: Some(onvif::Ipv6Configuration{
-                            accept_router_advert: None,
-                            dhcp: onvif::Ipv6DHCPConfiguration::Auto,
-                            manual: vec![],
-                            link_local: vec![],
-                            from_dhcp: vec![onvif::PrefixedIPv6Address{
-                                address: onvif::Ipv6Address(v6_addr.ip.to_string()),
-                                prefix_length: netmask_width!(v6_addr.netmask)
-                            }],
-                            from_ra: vec![],
-                            extension: None }) }
-                ]} else {vec![]},
+                }).collect(),
+                i_pv_6: vec![],
                 extension: None,
                 token: onvif::ReferenceToken(nic.name.clone()),
             }
@@ -376,67 +342,4 @@ fn to_date_time<T: chrono::TimeZone>(time: &DateTime<T>) -> onvif::DateTime {
             month: time.month() as i32,
             day: time.day() as i32 }
     }
-}
-
-
-/// Count the set bits in a byte using Brain Kerningham's algorithm.
-fn count_ones(mut value: u8) -> u8 {
-    let mut result = 0;
-    while value > 0 {
-        value &= value -1;
-        result += 1;
-    }
-    result
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use get_if_addrs::Ifv6Addr;
-    use network_interface::Netmask;
-    use std::net::{Ipv4Addr, Ipv6Addr};
-
-
-    #[test]
-    pub fn test_netmask_width() {
-        let mask: Netmask<Ipv4Addr> = None;
-
-        assert_eq!(0, netmask_width!(mask));
-        assert_eq!(8, netmask_width!(Some(Ipv4Addr::new(127, 0, 0, 1))));
-        assert_eq!(5, netmask_width!(Some(Ipv4Addr::new(1, 2, 3, 4))));
-        assert_eq!(24, netmask_width!(Some(Ipv4Addr::new(255, 255, 255, 0))));
-        assert_eq!(16, netmask_width!(Some(Ipv4Addr::new(255, 255, 0, 0))));
-        assert_eq!(8, netmask_width!(Some(Ipv4Addr::new(255, 0, 0, 0))));
-
-        assert_eq!(1, netmask_width!(Some(Ipv6Addr::LOCALHOST)));
-        assert_eq!(4, netmask_width!(Some(Ipv6Addr::new(0,0,0,0,0,3,2,1))));
-        assert_eq!(4, netmask_width!(Some(Ipv6Addr::new(0,0,0,0,0,3,2,1))));
-        assert_eq!(16, netmask_width!(Some(Ipv6Addr::new(0xFFFF,0,0,0,0,0,0,0))));
-    }
-
-    #[test]
-    pub fn test_count_ones() {
-        assert_eq!(count_ones(0), 0);
-        assert_eq!(count_ones(0b11111111), 8);
-        assert_eq!(count_ones(0b10001000), 2);
-        assert_eq!(count_ones(0b10001000), 2);
-    }
-
-    #[test]
-    pub fn test_has_ip_v6_true() {
-        let ip_v6_nic: Interface = Interface{ //TODO: Mock this
-            name: "test-nic".to_string(),
-            addr: IfAddr::V6(Ifv6Addr{
-                ip: Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1),
-                netmask: Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1),
-                broadcast: None })
-        };
-
-        let no_v6_nics = vec![];
-        let with_v6_nics = vec![ip_v6_nic];
-
-        assert_eq!(true, DeviceManagmentService::get_has_ip_v6(with_v6_nics));
-        assert_eq!(false, DeviceManagmentService::get_has_ip_v6(no_v6_nics));
-    }
-
 }

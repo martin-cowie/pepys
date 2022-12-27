@@ -7,7 +7,6 @@ edition.workspace = true
 
 [dependencies]
 chrono.workspace = true
-get_if_addrs.workspace = true
 static_init.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -18,7 +17,7 @@ yaserde_derive.workspace = true
 hyper.workspace = true
 xsd-types.workspace = true
 libc-strftime.workspace = true
-network-interface.workspace = true
+nix.workspace = true
 toml.workspace = true
 regex.workspace = true
 serde.workspace = true
