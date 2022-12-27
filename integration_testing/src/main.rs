@@ -11,11 +11,17 @@ mod tests {
     use reqwest::blocking::Client;
     use std::fs;
     use std::path::{PathBuf, Path};
+    use std::env;
     use sxd_document::parser;
     use sxd_xpath::{Factory, Context, Value, XPath};
+    use lazy_static::lazy_static;
 
-    const DEVICE_SERVICE: &str = "http://localhost:8088/onvif/device_service"; //TODO: make the URL root configurable
-    const MEDIA_SERVICE: &str = "http://localhost:8088/onvif/media_service";
+
+    lazy_static! {
+        static ref ROOT_URL: String = env::var("URL").unwrap_or("http://localhost:8088".to_string());
+        static ref DEVICE_SERVICE: String = format!("{}/onvif/device_service", *ROOT_URL);
+        static ref MEDIA_SERVICE: String = format!("{}/onvif/media_service", *ROOT_URL);
+    }
 
     fn resource_root() -> PathBuf {
         path!(PathBuf::from(env!("CARGO_MANIFEST_DIR")) / "resources" / "test")
@@ -121,7 +127,7 @@ mod tests {
     fn test_authentication() {
         let file_path = path!(resource_root() / "lacking_authentication.xml");
 
-        let response = post_file(file_path, DEVICE_SERVICE);
+        let response = post_file(file_path, &DEVICE_SERVICE);
         assert!(response.status().is_client_error());
 
         let body = response.text().expect("Cannot get content");
@@ -133,7 +139,7 @@ mod tests {
     #[test]
     fn test_unknown_service() {
         let file_path = path!(resource_root() / "unknown_service.xml");
-        let response = post_file(file_path, DEVICE_SERVICE);
+        let response = post_file(file_path, &DEVICE_SERVICE);
         assert!(response.status().is_client_error());
 
         let body = response.text().expect("Cannot get content");
@@ -144,7 +150,7 @@ mod tests {
     #[test]
     fn test_not_xml() {
         let file_path = path!(resource_root() / "invalid_request.xml");
-        let response = post_file(file_path, DEVICE_SERVICE);
+        let response = post_file(file_path, &DEVICE_SERVICE);
         assert!(response.status().is_client_error());
 
         let body = response.text().expect("Cannot get content");
@@ -156,7 +162,7 @@ mod tests {
     #[test]
     fn test_valid_stream_uri() {
         let file_path = path!(resource_root() / "onvif" / "media_service" / "GetStreamUri.xml");
-        let response = post_file(file_path, MEDIA_SERVICE);
+        let response = post_file(file_path, &MEDIA_SERVICE);
         assert!(response.status().is_success());
 
         let xml_text = response.text().expect("Cannot get content");
