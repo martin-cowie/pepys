@@ -70,7 +70,7 @@ pub fn summarise() -> Result<Vec<NicSummary>, Box<dyn Error>> {
 pub fn get_v4_addresses() -> impl Iterator<Item = Ipv4Addr> {
     ifaddrs::getifaddrs()
         .expect("Cannot get NICs")
-        .filter_map(|ifaddr| if is_serving(&ifaddr) {None} else {ifaddr.address})
+        .filter_map(|ifaddr| if is_serving(&ifaddr) {ifaddr.address} else {None})
         .filter_map(|sockaddrstorage| sockaddrstorage.as_sockaddr_in().map(|s| Ipv4Addr::from(s.ip())))
 }
 
