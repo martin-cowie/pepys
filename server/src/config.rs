@@ -29,7 +29,8 @@ pub struct Config {
 
 #[derive(Deserialize, Debug)]
 pub struct PiCameraConfig {
-    command: Vec<String>,
+    pub command: Vec<String>,
+    pub domain: String,
     pub port: u16
 }
 
@@ -40,9 +41,10 @@ impl PiCameraConfig {
             let result = VARIABLE_REGEX.replace_all(elem, |caps: &Captures| {
                 let var_name = &caps[1];
                 match var_name {
+                    "domain" => self.domain.to_string(),
+                    "password" => password.to_string(),
                     "port" => self.port.to_string(),
                     "user" => username.to_string(),
-                    "password" => password.to_string(),
                     _ => panic!("Unexpected variable {}", var_name)
                 }
             });
@@ -75,8 +77,9 @@ impl Default for Config {
 impl Default for PiCameraConfig {
     fn default() -> Self {
         Self {
-            command: vec!["v4l2rtspserver", "-P", "${port}", "-u", "h264", "-W", "1280", "-H", "720", "-U", "${user}:${password}", "/dev/video0"]
+            command: vec!["v4l2rtspserver", "-P", "${port}", "-u", "${domain}", "-W", "1280", "-H", "720", "-U", "${user}:${password}", "/dev/video0"]
                 .into_iter().map(|str| str.to_string()).collect(),
+            domain: "camera".into(),
             port: 8554,
         }
     }
@@ -114,6 +117,7 @@ mod test {
     pub fn test_pi_camera_interp() {
         let pi_camera = PiCameraConfig {
             command: vec!["[${port}]".to_string(), "bar".to_string(), "${password}-${user}".to_string()],
+            domain: "some_domain".into(),
             port: 1234,
         };
 
@@ -126,6 +130,7 @@ mod test {
     pub fn test_pi_camera_interp_bad() {
         let pi_camera = PiCameraConfig {
             command: vec!["${foo}".to_string(), "bar".to_string()],
+            domain: "some_domain".into(),
             port: 1234,
         };
 

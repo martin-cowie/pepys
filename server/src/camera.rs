@@ -62,7 +62,7 @@ fn monitor_child(mut child: Child) {
 const JPEG_MIME_TYPE: &str = "image/jpeg";
 
 pub struct PiCameraAdapter {
-    stream_uris: Vec<Uri>,
+    stream_uris: Vec<Uri>
 }
 
 impl PiCameraAdapter {
@@ -72,14 +72,14 @@ impl PiCameraAdapter {
             .unwrap_or_else(|err|panic!("Cannot start RTSP server '{}': {}", args[0], err));
         let child_pid = child.id().unwrap();
 
-        let stream_uris = Self::get_stream_uris(pi_camera.port);
+        let stream_uris = Self::get_stream_uris(pi_camera.port, &pi_camera.domain);
 
         info!("Began RTSP server with pid {}, and RTSP URIs {:?}", child_pid, stream_uris);
         monitor_child(child);
 
 
         PiCameraAdapter {
-           stream_uris
+           stream_uris,
         }
     }
 
@@ -103,9 +103,9 @@ impl PiCameraAdapter {
         Ok(child)
     }
 
-    fn get_stream_uris(port_number: u16) -> Vec<Uri> {
+    fn get_stream_uris(port_number: u16, domain: &str) -> Vec<Uri> {
         nics::get_v4_addresses()
-            .map(|ip|format!("rtsp://{}:{}/h264", ip, port_number)
+            .map(|ip|format!("rtsp://{ip}:{port_number}/{domain}")
                 .parse()
                 .expect("Cannot parse RTSP URI")
             ).collect()

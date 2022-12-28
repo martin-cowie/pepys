@@ -171,7 +171,7 @@ impl DeviceManagmentService {
                             link_local: None,
                             from_dhcp: Some(onvif::PrefixedIPv4Address {
                                 address: onvif::Ipv4Address(address.to_string()),
-                                prefix_length: nics::netmask_width(&netmask)
+                                prefix_length: nics::netmask_width(netmask)
                             }),
                             dhcp: true /* this is a guess */
                         }

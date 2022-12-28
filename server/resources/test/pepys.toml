@@ -6,4 +6,5 @@ adapter_type = "Pi"
 
 [pi-camera]
 command = ["foo", "bar", "baz"]
+domain = "pi-camera"
 port = 8554
