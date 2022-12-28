@@ -190,7 +190,7 @@ impl CameraAdapter for TestCameraAdapter {
 
     /// Returns the preview image and its MIME type
     fn get_preview(&self) -> (Vec<u8>, String) {
-        let file_bytes = include_bytes!("preview.jpeg").to_vec();
+        let file_bytes = include_bytes!("pepys.jpeg").to_vec();
         (file_bytes, "image/jpeg".to_string())
     }
 
