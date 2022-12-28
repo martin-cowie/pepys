@@ -14,7 +14,8 @@ pub enum AdapterType {
     Pi
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(default)]
 pub struct Config {
     pub port: u16,
     pub username: String,
@@ -27,7 +28,8 @@ pub struct Config {
 }
 
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(default)]
 pub struct PiCameraConfig {
     pub command: Vec<String>,
     pub domain: String,
@@ -68,7 +70,6 @@ impl Default for Config {
             username: "admin".to_string(),
             password: "password123".to_string(),
             adapter_type: AdapterType::Test,
-
             pi_camera: PiCameraConfig::default()
         }
     }
@@ -83,7 +84,6 @@ impl Default for PiCameraConfig {
             port: 8554,
         }
     }
-
 }
 
 #[cfg(test)]
@@ -111,6 +111,17 @@ mod test {
 
         assert_eq!(config.pi_camera.port, 8554);
         assert_eq!(config.pi_camera.command, vec!["foo", "bar", "baz"]);
+    }
+
+    #[test]
+    pub fn test_defaults() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("resources/test/empty.toml");
+
+        let config = Config::load(d.to_str().unwrap()).unwrap();
+        let defaults = Config::default();
+
+        assert_eq!(config, defaults);
     }
 
     #[test]
