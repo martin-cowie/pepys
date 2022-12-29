@@ -69,6 +69,11 @@ impl Authenticator {
 
 //===| Web Services Controller |====================================
 
+const PEPYS_LOGO_BYTES: &[u8] = include_bytes!("content/pepys.jpeg");
+const INDEX_HTML: &str = include_str!("content/index.html");
+const BOOTSTRAP_CSS: &str = include_str!("content/bootstrap.min.css");
+
+
 pub struct WebServices {
     device_management_service: DeviceManagmentService,
     imaging_service: ImagingService,
@@ -129,6 +134,39 @@ impl WebServices {
                     .unwrap_or_default();
                 return Ok(response);
             }
+
+            // Handle redirections from '/' to '/index.html'
+            (&Method::GET, "/") => {
+                let response = hyper::Response::builder()
+                    .status(StatusCode::MOVED_PERMANENTLY)
+                    .header("Location", "/index.html")
+                    .body(hyper::Body::from("Redirecting"))
+                    .unwrap();
+                return Ok(response);
+            }
+
+            (&Method::GET, "/index.html") => {
+                let response = hyper::Response::builder()
+                    .header(CONTENT_TYPE, "text/html")
+                    .body(hyper::Body::from(INDEX_HTML))
+                    .unwrap();
+                return Ok(response);
+            }
+            (&Method::GET, "/bootstrap.min.css") => {
+                let response = hyper::Response::builder()
+                    .header(CONTENT_TYPE, "text/css")
+                    .body(hyper::Body::from(BOOTSTRAP_CSS))
+                    .unwrap();
+                return Ok(response);
+            }
+            (&Method::GET, "/pepys.jpeg") => {
+                let response = hyper::Response::builder()
+                    .header(CONTENT_TYPE, "image/jpeg")
+                    .body(hyper::Body::from(PEPYS_LOGO_BYTES.to_vec()))
+                    .unwrap();
+                return Ok(response);
+            }
+
 
             // Return 404 Not Found for all other methods & URIs.
             _ => {

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pepys</title>
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #555669;
+            color: antiquewhite;
+        }
+        a {
+            color: aliceblue;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container col-xxl-8 px-4 py-5">
+        <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
+          <div class="col-10 col-sm-8 col-lg-6">
+            <figure>
+                <img src="pepys.jpeg" class="d-block mx-lg-auto img-fluid rounded" alt="Pepys portrait" width="600" height="400" loading="lazy">
+                <figcaption class="text-right"">Noted diarist and naval administrator, <a href="https://en.wikipedia.org/wiki/Samuel_Pepys">Samuel Pepys</a>.</figcaption>
+            </figure>
+          </div>
+          <div class="col-lg-6">
+            <h1 class="display-5 fw-bold lh-1 mb-3">Pepys</h1>
+            <p class="lead">An <a href="https://en.wikipedia.org/wiki/ONVIF">ONVIF</a> implementation for the Raspberry Pi camera. Pronounced 'Peeps'.</p>
+            <p>Written in Rust. Lightweight enough to run on the original Pi Zero.</p>
+            <p>Implements the ONVIF SOAP web services and advertises them via WS-Discovery. Delivers the RTSP stream using <a href="https://github.com/mpromonet/v4l2rtspserver">v4l2rtsp from mpromonet</a>.</p>
+
+        </div>
+        </div>
+      </div>
+  </body>
+</html>

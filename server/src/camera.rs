@@ -18,6 +18,9 @@ use crate::nics;
 /// A Regular expression handle IPv4 RTSP URIs with an optional port number
 static RTSP_URI_REGEX: Regex = Regex::new(r"(rtsp://\d+\.\d+\.\d+\.\d+(:\d+)?)/").expect("Cannot compile regex");
 
+const PEPYS_LOGO_BYTES: &[u8] = include_bytes!("web_services/content/pepys.jpeg");
+
+
 pub trait CameraAdapter: Send + Sync { // Extra traits so it can be shared with > 1 thread
     fn get_preview(&self) -> (Vec<u8>, String);
     fn get_camera_streams(&self) -> Vec<Uri>;
@@ -115,7 +118,7 @@ impl PiCameraAdapter {
 
 impl CameraAdapter for PiCameraAdapter {
     fn get_preview(&self) -> (Vec<u8>, String) {
-        let file_bytes = include_bytes!("pepys.jpeg").to_vec();
+        let file_bytes = PEPYS_LOGO_BYTES.to_vec();
         (file_bytes, JPEG_MIME_TYPE.to_string()) //TODO: could be &str
     }
 
@@ -190,7 +193,7 @@ impl CameraAdapter for TestCameraAdapter {
 
     /// Returns the preview image and its MIME type
     fn get_preview(&self) -> (Vec<u8>, String) {
-        let file_bytes = include_bytes!("pepys.jpeg").to_vec();
+        let file_bytes = PEPYS_LOGO_BYTES.to_vec();
         (file_bytes, "image/jpeg".to_string())
     }
 
