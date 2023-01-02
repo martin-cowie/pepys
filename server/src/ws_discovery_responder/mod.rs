@@ -1,6 +1,7 @@
 mod probe;
 mod probe_response;
 
+use hyper::body::Buf;
 use static_init::dynamic;
 use std::{error::Error, net::{SocketAddr, Ipv4Addr, IpAddr}};
 use tokio::net::UdpSocket;
@@ -46,12 +47,12 @@ pub async fn bind_ws_discovery_responder(xaddr: &str) -> Result<(), Box<dyn Erro
     let mut buf = vec![0; 16 * 1024];
     loop {
         let (len, sender_addr) = listening_socket.recv_from(&mut buf).await?;
-        let received_message = String::from_utf8_lossy(&buf[..len]).to_string();
+        let reader = (&buf[..len]).reader();
 
         //TODO: handle parse failures - "IP Cams" sends XML with unbound prefixes.
-
-        match yaserde::de::from_str::<Envelope>(&received_message) {
-            Err(detail) => {
+        let parse_result: Result<Envelope,String> = yaserde::de::from_reader(reader);
+        match parse_result {
+                Err(detail) => {
                 error!("Cannot parse XML probe from {}: {}", sender_addr, detail);
             }
 
