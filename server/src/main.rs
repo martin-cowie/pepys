@@ -7,7 +7,6 @@ mod nics;
 
 use camera::{CameraAdapter, TestCameraAdapter, PiCameraAdapter};
 use web_services::Authenticator;
-use std::error::Error;
 use tracing::{info, trace, error};
 use ws_discovery_responder::bind_ws_discovery_responder;
 
@@ -18,7 +17,22 @@ use hyper::Uri;
 
 use std::convert::Infallible;
 use std::env;
+use std::error::Error;
+use std::time::Duration;
 
+use tokio::time::sleep;
+
+const LOGO: &str = r"
+ ____
+/\  _`\
+\ \ \L\ \ __   _____   __  __    ____
+ \ \ ,__/'__`\/\ '__`\/\ \/\ \  /',__\
+  \ \ \/\  __/\ \ \L\ \ \ \_\ \/\__, `\
+   \ \_\ \____\\ \ ,__/\/`____ \/\____/
+    \/_/\/____/ \ \ \/  `/___/> \/___/
+                 \ \_\     /\___/
+                  \/_/     \/__/
+";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
@@ -41,10 +55,10 @@ async fn main() -> Result<(), Box<dyn Error>>{
 
     let authenticator: &'static Authenticator = Box::leak(Box::new(Authenticator::new(&config.username, &config.password)));
 
-    let xaddrs = get_urls(config.port , web_services::DEVICE_MANAGEMENT_PATH)?;
+    let device_management_addrs = get_urls(config.port, web_services::DEVICE_MANAGEMENT_PATH)?;
 
     let web_services: &'static web_services::WebServices = {
-        let service_root: Uri = xaddrs[0].parse().expect("Cannot parse root URI");
+        let service_root: Uri = device_management_addrs[0].parse().expect("Cannot parse root URI");
         let camera_adapter: &'static dyn CameraAdapter = match config.adapter_type {
             config::AdapterType::Test => Box::leak(Box::new(TestCameraAdapter::new())),
             config::AdapterType::Pi => Box::leak(Box::new(PiCameraAdapter::new(&config.pi_camera, &config.username, &config.password))),
@@ -90,11 +104,23 @@ async fn main() -> Result<(), Box<dyn Error>>{
         let addr = ([0, 0, 0, 0], config.port).into();
         Server::bind(&addr).serve(service_maker)
     };
-    info!("Started HTTP server bound at {:?}", xaddrs);
 
     // Start the UDP listener
     let ssdp_responder  = tokio::spawn(async move {
-        bind_ws_discovery_responder(&xaddrs.join(" ")).await.expect("Cannot start WS-Discovery listener");
+        bind_ws_discovery_responder(&device_management_addrs.join(" "))
+            .await
+            .expect("Cannot start WS-Discovery listener");
+    });
+
+    // Log the greeting after 1s
+    tokio::spawn(async move {
+        let duration = Duration::from_secs(1);
+        sleep(duration).await;
+
+        let web_server_addresses = get_urls(config.port, "")
+            .expect("Cannot get URLs")
+            .join(", ");
+        info!("Peyps begun. HTTP server bound at {}{}", web_server_addresses, LOGO);
     });
 
     let (_, _) = (web_server.await?, ssdp_responder.await?);
