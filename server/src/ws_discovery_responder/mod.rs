@@ -51,24 +51,35 @@ pub async fn bind_ws_discovery_responder(xaddr: &str) -> Result<(), Box<dyn Erro
 
         //TODO: handle parse failures - "IP Cams" sends XML with unbound prefixes.
         let parse_result: Result<Envelope,String> = yaserde::de::from_reader(reader);
+
         match parse_result {
-                Err(detail) => {
+            Err(detail) => {
                 error!("Cannot parse XML probe from {}: {}", sender_addr, detail);
             }
 
-            Ok(probe) => {
-                if probe.header.action == WS_DISCOVERY_PROBE {
-                    debug!("Received probe from {}: {:#?}", sender_addr, probe);
-                    let response = build_response(&probe, xaddr);
-                    let response_str = yaserde::ser::to_string(&build_response(&probe, xaddr))?;
-                    let response_bytes = response_str.as_bytes();
-                    listening_socket.send_to(response_bytes, sender_addr).await?;
-                    debug!("Sent {} bytes to {}: {:#?}", response_bytes.len(), sender_addr, response);
-                }
+            Ok(probe) if filter_probe(&probe) => {
+                debug!("Received probe from {}: {:#?}", sender_addr, probe);
+                let response = build_response(&probe, xaddr);
+                let response_str = yaserde::ser::to_string(&build_response(&probe, xaddr))?;
+                let response_bytes = response_str.as_bytes();
+                listening_socket.send_to(response_bytes, sender_addr).await?;
+                debug!("Sent {} bytes to {}: {:#?}", response_bytes.len(), sender_addr, response);
+            }
+
+            _ => {
+                // Not a matching probe - do nothing
             }
         }
-
      }
+}
+
+fn filter_probe(probe: &Envelope) -> bool {
+    probe.header.action == WS_DISCOVERY_PROBE
+
+    //TODO: check probe.body.probe.types holds `dn:NetworkVideoTransmitter`
+
+
+    //TODO: check the Scopes
 }
 
 /**
