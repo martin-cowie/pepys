@@ -47,7 +47,7 @@ impl PiCameraConfig {
                     "password" => password.to_string(),
                     "port" => self.port.to_string(),
                     "user" => username.to_string(),
-                    _ => panic!("Unexpected variable {}", var_name)
+                    _ => panic!("Unexpected variable {var_name}")
                 }
             });
             result.to_string()

@@ -87,7 +87,7 @@ async fn main() -> Result<(), Box<dyn Error>>{
                         // Log request URIs next to response status code
                         if let Ok(ref response) = response {
                             let status = response.status();
-                            let log_entry = format!("Responding to request for URI {} from {} => {}", uri, addr, status);
+                            let log_entry = format!("Responding to request for URI {uri} from {addr} => {status}");
 
                             if status.is_success() || status.is_informational() {
                                 trace!("{}", log_entry);
