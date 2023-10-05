@@ -42,7 +42,7 @@ pub fn summarise() -> Result<Vec<NicSummary>, Box<dyn Error>> {
         .filter(is_serving)
         .for_each(|ifaddr| {
 
-        let mut summary = nics_by_name
+        let summary = nics_by_name
             .entry(ifaddr.interface_name.clone())
             .or_insert_with(|| NicSummary::new(ifaddr.interface_name));
 
